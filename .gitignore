@@ -2,3 +2,8 @@ build/
 STM32/build/
 RP2350/build/
 .DS_Store
+
+# Ignore top-level release files/directories and release files/directories
+# inside any top-level project directory.
+/release*
+/*/release*

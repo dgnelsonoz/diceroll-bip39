@@ -1,4 +1,4 @@
-## Coinflip BIP-39
+## Dice Roll BIP-39
 
 Coinflip is an offline, transparent, verifiable, inexpensive and easy to use tool for generating a 24-word BIP-39 mnemonic from coin flips or binary dice rolls.  It runs on either the Waveshare RP2350 4.3inch Capacitive Touch Display Development Board (RP2350-Touch-LCD-4.3B-BOX) or on the STM32F469I Discovery Development Board (STM32F469I-DISCO), using an integrated 800 x 480 touchscreen.  The Waveshare board is the preferred option. The Waveshare board comes with an optional case and is easier to program. At the time of writing the STM32 board has proven difficult to source.
 
@@ -16,11 +16,64 @@ Each of the first 23 words can be randomly selected by flipping a coin eleven ti
 
 The problem is that it’s tedious to flip a coin 256 times, write the numbers down, convert them to decimal and look them up in the BIP-39 word list. And then you have to calculate the checksum for the 24th word. The coin flip to BIP-39 converter makes that process easier, *transparently*.
 
+## Independently verify the source code
+
+This project is deliberately open source so that you do not need to trust the firmware blindly. Before using it to generate a seed for real funds, consider asking an AI coding tool such as ChatGPT or Codex to audit the GitHub repository directly.
+
+Go to the repository at https://github.com/dgnelsonoz/dice-roll-bip39.  On the right hand side of the page, under **Releases**, click on the latest release.  At the bottom of the page under **Assets** you will a signed file called bip39-vx.x.x.tar.gz.  Download the file and submit it to your AI agent along with the following prompt:
+
+```
+Audit this GitHub repository's BIP39 mnemonic-generation code.
+
+https://github.com/dgnelsonoz/dice-roll-bip39
+
+The source code is attached.
+
+Do not modify any files.
+
+Trace the code from the user's coin flips or binary dice rolls all
+the way to the displayed 24-word BIP39 mnemonic.
+
+Verify specifically that:
+
+1. Each set of 11 binary inputs is converted to the intended integer
+   in the range 0-2047, with the correct bit order.
+
+2. That integer maps to exactly the corresponding entry in the
+   official BIP39 wordlist.
+
+3. For a 24-word mnemonic, the first 23 words encode 253 bits of
+   user-provided entropy.
+
+4. The remaining 3 entropy bits are handled correctly.
+
+5. SHA-256 is applied according to BIP39 and the correct 8 checksum
+   bits are appended to the 256 bits of entropy.
+
+6. The resulting final 11-bit value selects the correct 24th word.
+
+7. Every BIP39 wordlist bundled with this repository exactly matches
+   the corresponding official BIP39 wordlists, including ordering,
+   spelling and number of entries.
+
+8. There is no RNG, PRNG, hardware random-number generator, or other
+   source of entropy mixed into or substituted for the user's coin
+   flips/dice rolls.
+
+9. Compare the implementation against official BIP39 test vectors
+   where applicable.
+
+Report any discrepancy, even if it appears harmless.
+
+For every conclusion, cite the relevant filename, function and line
+numbers in this repository and the corresponding requirement in
+BIP39.
+```
 ## How it works
 
 Flip a coin eleven times to generate each seed word.  Or roll a binary dice eleven times, or eleven binary dice in one go and line them up randomly.  Enter the binary digits, 1s and 0s, into the converter and watch a seed word appear along with its decimal position in the word list. The position in the word list is the binary to decimal conversion of your eleven bit binary number plus one.  We add one because computers start counting from zero, we start counting from the number one. 
 
-Download a BIP-39 wordlist that has both the word's decimal number position and its binary equivalent.  The middle row of the converter displays the word's binary number (coinflips) and its index into the list.  Look up the word by its index, compare the binary number in the list with the binary number on the display.  If they are the same you can feel confident that the Coinflip converter is genuine.  Looking in an independent word list is optional, but remember, *don't trust, verify.*
+As an extra security check, you can download a BIP-39 wordlist that has both the word's decimal number position and its binary equivalent.  The middle row of the converter displays the word's binary number (coinflips) and its index into the list.  Look up the word by its index, compare the binary number in the list with the binary number on the display.  If they are the same you can feel confident that the Coinflip converter is genuine.  Looking in an independent word list is optional, but remember, *don't trust, verify.*
 
 
 You can find the official BIP-39 word lists [here](https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt).
