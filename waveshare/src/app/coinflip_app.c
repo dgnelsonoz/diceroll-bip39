@@ -102,7 +102,8 @@ static void draw_word_cell( CoinflipCanvas *canvas, const MnemonicState *state,
         snprintf( label, sizeof( label ), "%02u [CHECKSUM]", word );
     else
         snprintf( label, sizeof( label ), "%02u", word );
-    coinflip_graphics_text( canvas, ( uint16_t )( x + 10U ), ( uint16_t )( y + 10U ), label, 1,
+    coinflip_graphics_text( canvas, ( uint16_t )( x + 10U ),
+                           ( uint16_t )( y + 10U ), label, 1,
                            word == current_word &&
                            !mnemonic_state_entropy_complete( state )
                            ? CYAN : WHITE, BLACK );
@@ -310,7 +311,7 @@ static void draw_coinflip_screen( uint16_t *pixels, const MnemonicState *state )
     CoinflipCanvas canvas = { pixels, LCD_WIDTH, LCD_HEIGHT };
 
     coinflip_graphics_clear( &canvas, BLACK );
-    coinflip_graphics_text24_centered( &canvas, 3, "COIN FLIPS TO BIP-39",
+    coinflip_graphics_text24_centered( &canvas, 3, "DICE ROLL TO BIP-39",
                                       WHITE, BLACK );
     coinflip_graphics_fill_rect( &canvas, 0, 31, 800, 1, WHITE );
 

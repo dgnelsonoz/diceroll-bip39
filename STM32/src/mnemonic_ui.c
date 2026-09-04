@@ -119,7 +119,7 @@ static void draw_title(void)
     BSP_LCD_SetFont(&Font20);
     BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
     BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
-    display_text_centered(6, "COIN FLIPS TO BIP-39");
+    display_text_centered(6, "DICE ROLL TO BIP-39");
     BSP_LCD_DrawHLine(0, TITLE_HEIGHT - 1U, DISPLAY_WIDTH);
 }
 

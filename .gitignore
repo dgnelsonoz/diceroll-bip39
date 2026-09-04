@@ -1,6 +1,6 @@
 build/
-STM32/build/
-RP2350/build/
+stm32/build/
+waveshare/build/
 .DS_Store
 
 # Ignore top-level release files/directories and release files/directories

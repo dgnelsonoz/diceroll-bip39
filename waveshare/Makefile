@@ -4,7 +4,7 @@ RELEASE_DIR ?= release
 VERSION ?= dev
 PICOTOOL_FETCH_FROM_GIT_PATH ?=
 LANGUAGE ?= english
-FLASH_TARGET ?= $(if $(filter english,$(LANGUAGE)),coinflip_rp2350,coinflip_rp2350_$(LANGUAGE))
+FLASH_TARGET ?= $(if $(filter english,$(LANGUAGE)),bip39_waveshare,bip39_waveshare_$(LANGUAGE))
 LANGUAGES = english czech french italian portuguese spanish
 
 .PHONY: all configure clean flash release test audit
@@ -20,16 +20,16 @@ configure:
 test:
 	$(CC) -std=c11 -Wall -Wextra -Werror -I../common \
 		../common/bip39_lookup.c ../common/mnemonic_state.c ../common/sha256.c ../common/utf8.c \
-		../tests/test_mnemonic_state.c -o /tmp/coinflip_mnemonic_tests
-	/tmp/coinflip_mnemonic_tests
+		../tests/test_mnemonic_state.c -o /tmp/bip39_mnemonic_tests
+	/tmp/bip39_mnemonic_tests
 
 audit: configure
-	$(MAKE) -C $(BUILD_DIR) $(addprefix coinflip_rp2350_,$(filter-out english,$(LANGUAGES))) coinflip_rp2350
+	$(MAKE) -C $(BUILD_DIR) $(addprefix bip39_waveshare_,$(filter-out english,$(LANGUAGES))) bip39_waveshare
 	@set -e; \
 	for language in $(LANGUAGES); do \
-		target=coinflip_rp2350; \
+		target=bip39_waveshare; \
 		if [ "$$language" != "english" ]; then \
-			target=coinflip_rp2350_$$language; \
+			target=bip39_waveshare_$$language; \
 		fi; \
 		if nm -C "$(BUILD_DIR)/$$target.elf" | \
 			rg -q 'flash_range_(erase|program)|flash_do_cmd'; then \
@@ -42,13 +42,13 @@ release: all
 	@mkdir -p $(RELEASE_DIR)
 	@set -e; \
 	for language in $(LANGUAGES); do \
-		target=coinflip_rp2350; \
+		target=bip39_waveshare; \
 		if [ "$$language" != "english" ]; then \
-			target=coinflip_rp2350_$$language; \
+			target=bip39_waveshare_$$language; \
 		fi; \
 		cp $(BUILD_DIR)/$$target.uf2 \
-			$(RELEASE_DIR)/coinflip-rp2350-$$language-$(VERSION).uf2; \
-		echo "Release file: $(RELEASE_DIR)/coinflip-rp2350-$$language-$(VERSION).uf2"; \
+			$(RELEASE_DIR)/bip39-waveshare-$$language-$(VERSION).uf2; \
+		echo "Release file: $(RELEASE_DIR)/bip39-waveshare-$$language-$(VERSION).uf2"; \
 	done
 
 flash: configure

@@ -3,7 +3,7 @@ RELEASE_DIR = release
 VERSION ?= dev
 LANGUAGE ?= english
 WORDLIST ?= $(LANGUAGE)
-PROJECT ?= coinflip-stm32-$(WORDLIST)
+PROJECT ?= bip39-stm32-$(WORDLIST)
 
 LANGUAGES = english czech french italian portuguese spanish
 
@@ -86,15 +86,15 @@ all:
 	for language in $(LANGUAGES); do \
 		$(MAKE) WORDLIST=$$language \
 			BUILD_DIR=build/$$language \
-			PROJECT=coinflip-stm32-$$language variant; \
+			PROJECT=bip39-stm32-$$language variant; \
 	done
 
-variant: $(BUILD_DIR)/$(PROJECT).elf
+variant: $(BUILD_DIR)/$(PROJECT).elf $(BUILD_DIR)/$(PROJECT).bin
 
 audit: all
 	@set -e; \
 	for language in $(LANGUAGES); do \
-		elf=build/$$language/coinflip-stm32-$$language.elf; \
+		elf=build/$$language/bip39-stm32-$$language.elf; \
 		if nm -C "$$elf" | \
 			rg -q 'HAL_FLASH_(Program|Ex_Erase|Unlock|Lock)|FLASH_Program'; then \
 			echo "ERROR: $$elf contains flash-write symbols"; exit 1; \
@@ -106,6 +106,9 @@ $(BUILD_DIR)/$(PROJECT).elf: $(OBJS) $(LDSCRIPT)
 	@mkdir -p $(dir $@)
 	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
 	$(SIZE) $@
+
+$(BUILD_DIR)/$(PROJECT).bin: $(BUILD_DIR)/$(PROJECT).elf
+	$(OBJCOPY) -O binary $< $@
 
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(BUILD_DIR)
@@ -123,13 +126,14 @@ release:
 	for language in $(LANGUAGES); do \
 		$(MAKE) WORDLIST=$$language \
 			BUILD_DIR=build/$$language \
-			PROJECT=coinflip-stm32-$$language release-variant; \
+			PROJECT=bip39-stm32-$$language release-variant; \
 	done
 
 release-variant: variant
 	@mkdir -p $(RELEASE_DIR)
 	cp $(BUILD_DIR)/$(PROJECT).elf $(RELEASE_DIR)/$(PROJECT)-$(VERSION).elf
-	@echo "Release file: $(RELEASE_DIR)/$(PROJECT)-$(VERSION).elf"
+	cp $(BUILD_DIR)/$(PROJECT).bin $(RELEASE_DIR)/$(PROJECT)-$(VERSION).bin
+	@echo "Release files: $(RELEASE_DIR)/$(PROJECT)-$(VERSION).elf and $(RELEASE_DIR)/$(PROJECT)-$(VERSION).bin"
 
 test: $(BUILD_DIR)/test_mnemonic_state
 	$(BUILD_DIR)/test_mnemonic_state
