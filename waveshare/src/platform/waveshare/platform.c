@@ -20,37 +20,30 @@ static bsp_display_interface_t *display;
 static bsp_touch_interface_t *touch;
 static uint16_t transfer_buffer1[ TRANSFER_PIXELS ];
 static uint16_t transfer_buffer2[ TRANSFER_PIXELS ];
-static pio_rgb_info_t rgb =
-{
-    .width = DICEROLL_DISPLAY_WIDTH,
-    .height = DICEROLL_DISPLAY_HEIGHT,
-    .transfer_size = TRANSFER_PIXELS,
-    .pclk_freq = BSP_LCD_PCLK_FREQ,
-    .mode = { false, true, true }
-};
-static bsp_display_info_t display_info =
-{
-    .width = DICEROLL_DISPLAY_WIDTH,
-    .height = DICEROLL_DISPLAY_HEIGHT,
-    .brightness = 100,
-    .user_data = &rgb
-};
-static bsp_touch_info_t touch_info =
-{
-    .width = DICEROLL_DISPLAY_WIDTH,
-    .height = DICEROLL_DISPLAY_HEIGHT,
-    .rotation = 0
-};
+static pio_rgb_info_t rgb;
+static bsp_display_info_t display_info;
+static bsp_touch_info_t touch_info;
 
 uint16_t *waveshare_platform_display_init( void )
 {
     rp2350_set_system_clock( SYSTEM_CLOCK_MHZ );
+    rgb.width = DICEROLL_DISPLAY_WIDTH;
+    rgb.height = DICEROLL_DISPLAY_HEIGHT;
+    rgb.transfer_size = TRANSFER_PIXELS;
+    rgb.pclk_freq = BSP_LCD_PCLK_FREQ;
+    rgb.mode.double_buffer = false;
+    rgb.mode.enabled_transfer = true;
+    rgb.mode.enabled_psram = true;
     rgb.framebuffer1 = rp_mem_malloc( DICEROLL_DISPLAY_WIDTH *
                                       DICEROLL_DISPLAY_HEIGHT *
                                       sizeof( uint16_t ) );
     rgb.framebuffer2 = NULL;
     rgb.transfer_buffer1 = transfer_buffer1;
     rgb.transfer_buffer2 = transfer_buffer2;
+    display_info.width = DICEROLL_DISPLAY_WIDTH;
+    display_info.height = DICEROLL_DISPLAY_HEIGHT;
+    display_info.brightness = 100U;
+    display_info.user_data = &rgb;
 
     if( rgb.framebuffer1 == NULL )
         panic( "display allocation failed" );
@@ -63,6 +56,10 @@ uint16_t *waveshare_platform_display_init( void )
 
 void waveshare_platform_touch_init( void )
 {
+    touch_info.width = DICEROLL_DISPLAY_WIDTH;
+    touch_info.height = DICEROLL_DISPLAY_HEIGHT;
+    touch_info.rotation = 0U;
+
     bsp_i2c_init();
     if( !bsp_touch_new_gt911( &touch, &touch_info ) )
         panic( "touch creation failed" );
