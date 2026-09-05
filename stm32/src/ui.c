@@ -384,7 +384,7 @@ static void draw_buttons( int phrase_complete )
     BSP_LCD_SetBackColor( button_color( DICEROLL_BUTTON_BACK, phrase_complete ) );
     display_text( 181, 350, "HOLD" );
     BSP_LCD_SetFont( &Font16 );
-    display_text( 168, 390, "BACK" );
+    display_text( 173, 390, "BACK" );
 
     BSP_LCD_SetFont( &Font24 );
     BSP_LCD_SetTextColor( phrase_complete ? LCD_COLOR_DARKGRAY : LCD_COLOR_BLACK );

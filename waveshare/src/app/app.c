@@ -372,7 +372,7 @@ static void draw_diceroll_screen( uint16_t *pixels, const MnemonicState *state )
                            DARK_RED );
     graphics_text12( &canvas, 181, 350, "HOLD", BLACK,
                            ORANGE );
-    graphics_text_default( &canvas, 168, 390, "BACK", BLACK,
+    graphics_text_default( &canvas, 173, 390, "BACK", BLACK,
                            ORANGE );
     graphics_text24( &canvas, 352, 354, "HEADS", BLACK,
                              LIGHT_GREY );
