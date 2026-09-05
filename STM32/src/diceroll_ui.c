@@ -186,7 +186,7 @@ static void draw_word_cells( const MnemonicState *state )
                       mnemonic_state_get_current_word_bit_count( state ) == 0U
                       ? "ready" : "in progress" );
         else if( word_number == MNEMONIC_WORD_COUNT )
-            snprintf( label, sizeof( label ), "%u%s[CHECKSUM]", word_number,
+            snprintf( label, sizeof( label ), "%u%s[checksum]", word_number,
                       word_number <= 6U ? " " : word_number < 10U ? "  " : " " );
         else
             snprintf( label, sizeof( label ), "%u", word_number );

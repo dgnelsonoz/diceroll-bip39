@@ -85,7 +85,7 @@ static void draw_word_cell( DicerollCanvas *canvas, const MnemonicState *state,
                  ? "ready" : "in progress" );
     }
     else if( word == 24U )
-        snprintf( label, sizeof( label ), "%u%s[CHECKSUM]", word,
+        snprintf( label, sizeof( label ), "%u%s[checksum]", word,
                  word <= 6U ? " " : word < 10U ? "  " : " " );
     else
         snprintf( label, sizeof( label ), "%u", word );
