@@ -1,6 +1,6 @@
-#include "coinflip_graphics.h"
-#include "coinflip_app.h"
-#include "coinflip_ui.h"
+#include "diceroll_graphics.h"
+#include "diceroll_app.h"
+#include "diceroll_ui.h"
 #include "bip39_lookup.h"
 #include "layout.h"
 #include "mnemonic_state.h"
@@ -404,7 +404,7 @@ static void present( const MnemonicState *state )
     draw_coinflip_screen( framebuffer, state );
 }
 
-void coinflip_app_run( void )
+void diceroll_app_run( void )
 {
     bsp_touch_interface_t *touch;
     bsp_touch_data_t touch_data;

@@ -1,6 +1,6 @@
-#include "coinflip_ui.h"
+#include "diceroll_ui.h"
 
-#include "coinflip_graphics.h"
+#include "diceroll_graphics.h"
 
 enum
 {

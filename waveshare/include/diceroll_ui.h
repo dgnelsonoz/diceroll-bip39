@@ -1,5 +1,5 @@
-#ifndef COINFLIP_UI_H
-#define COINFLIP_UI_H
+#ifndef DICEROLL_UI_H
+#define DICEROLL_UI_H
 
 #include <stdint.h>
 

@@ -1,5 +1,5 @@
-#ifndef COINFLIP_GRAPHICS_H
-#define COINFLIP_GRAPHICS_H
+#ifndef DICEROLL_GRAPHICS_H
+#define DICEROLL_GRAPHICS_H
 
 #include <stdint.h>
 

@@ -1,7 +1,7 @@
-#include "coinflip_app.h"
+#include "diceroll_app.h"
 
 int main( void )
 {
-    coinflip_app_run( );
+    diceroll_app_run( );
     return 0;
 }

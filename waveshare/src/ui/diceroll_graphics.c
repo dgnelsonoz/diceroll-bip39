@@ -1,4 +1,4 @@
-#include "coinflip_graphics.h"
+#include "diceroll_graphics.h"
 
 #include "fonts.h"
 #include "utf8.h"
