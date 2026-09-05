@@ -2,6 +2,7 @@
 #include "coinflip_app.h"
 #include "coinflip_ui.h"
 #include "bip39_lookup.h"
+#include "layout.h"
 #include "mnemonic_state.h"
 #include "rp2350_clock.h"
 #include "utf8.h"
@@ -18,9 +19,9 @@
 
 enum
 {
-    LCD_WIDTH = 800U,
-    LCD_HEIGHT = 480U,
-    TRANSFER_PIXELS = LCD_WIDTH * 120U,
+    LCD_WIDTH = DICEROLL_DISPLAY_WIDTH,
+    LCD_HEIGHT = DICEROLL_DISPLAY_HEIGHT,
+    TRANSFER_PIXELS = DICEROLL_DISPLAY_WIDTH * 120U,
     TEST_SYSTEM_CLOCK_MHZ = 260U,
     TOUCH_RELEASE_SAMPLES = 3U
 };
@@ -39,6 +40,11 @@ static uint16_t *framebuffer;
 static uint8_t selected_word;
 static uint16_t transfer_buffer1[ TRANSFER_PIXELS ];
 static uint16_t transfer_buffer2[ TRANSFER_PIXELS ];
+
+typedef char wave_layout_width_must_match[
+    LCD_WIDTH == DICEROLL_DISPLAY_WIDTH ? 1 : -1];
+typedef char wave_layout_height_must_match[
+    LCD_HEIGHT == DICEROLL_DISPLAY_HEIGHT ? 1 : -1];
 
 static void format_partial_bits( const MnemonicState *state, char *bits,
                                 uint8_t target_bits )
@@ -91,15 +97,17 @@ static void draw_word_cell( CoinflipCanvas *canvas, const MnemonicState *state,
     char label[ 24 ];
     char list_number[ 6 ];
     uint16_t index;
-    uint16_t x = ( uint16_t )( ( ( word - 1U ) / 6U ) * 200U );
-    uint16_t y = ( uint16_t )( 32U + ( ( word - 1U ) % 6U ) * 36U );
+    uint16_t x;
+    uint16_t y;
     uint8_t current_word = mnemonic_state_get_current_word_number( state );
     int has_word = word < 24U
                    ? mnemonic_state_get_word_index( state, word, &index ) == 0
                    : mnemonic_state_get_final_word_index( state, &index ) == 0;
 
+    diceroll_layout_word_cell( word, &x, &y );
     coinflip_graphics_fill_rect( canvas, ( uint16_t )( x + 1U ), y,
-                                199, 35, BLACK );
+                                DICEROLL_WORD_COLUMN_WIDTH - 1U,
+                                DICEROLL_WORD_ROW_HEIGHT - 1U, BLACK );
     if( has_word )
     {
         const char *word_text = bip39_get_word_by_index( index );
@@ -350,31 +358,57 @@ static void draw_coinflip_screen( uint16_t *pixels, const MnemonicState *state )
     coinflip_graphics_clear( &canvas, BLACK );
     coinflip_graphics_text24_centered( &canvas, 3, "DICE ROLL TO BIP-39",
                                       WHITE, BLACK );
-    coinflip_graphics_fill_rect( &canvas, 0, 31, 800, 1, WHITE );
+    coinflip_graphics_fill_rect( &canvas, 0, DICEROLL_TITLE_HEIGHT - 1U,
+                                DICEROLL_DISPLAY_WIDTH, 1, WHITE );
 
     for( uint16_t column = 1; column < 4; ++column )
-        coinflip_graphics_fill_rect( &canvas, column * 200U, 32, 1, 216, WHITE );
+        coinflip_graphics_fill_rect( &canvas,
+                                    column * DICEROLL_WORD_COLUMN_WIDTH,
+                                    DICEROLL_WORD_GRID_TOP, 1,
+                                    DICEROLL_WORD_GRID_HEIGHT, WHITE );
     for( uint16_t row = 1; row <= 6; ++row )
     {
-        coinflip_graphics_fill_rect( &canvas, 0, ( uint16_t )( 32U + row * 36U - 1U ),
-                                    800, 1, WHITE );
+        coinflip_graphics_fill_rect( &canvas, 0,
+                                    ( uint16_t )( DICEROLL_WORD_GRID_TOP +
+                                                  row * DICEROLL_WORD_ROW_HEIGHT - 1U ),
+                                    DICEROLL_DISPLAY_WIDTH, 1, WHITE );
     }
     for( uint8_t word = 1; word <= 24; ++word )
         draw_word_cell( &canvas, state, word );
 
     draw_status( &canvas, state );
 
-    coinflip_graphics_fill_rect( &canvas, 0, 328, 130, 152,
+    coinflip_graphics_fill_rect( &canvas, 0, DICEROLL_BUTTON_TOP,
+                                DICEROLL_RESTART_WIDTH,
+                                DICEROLL_BUTTON_HEIGHT,
                                 DARK_RED );
-    coinflip_graphics_fill_rect( &canvas, 130, 328, 130, 152,
+    coinflip_graphics_fill_rect( &canvas, DICEROLL_RESTART_WIDTH,
+                                DICEROLL_BUTTON_TOP, DICEROLL_BACK_WIDTH,
+                                DICEROLL_BUTTON_HEIGHT,
                                 ORANGE );
-    coinflip_graphics_fill_rect( &canvas, 260, 328, 270, 152,
+    coinflip_graphics_fill_rect( &canvas,
+                                DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH,
+                                DICEROLL_BUTTON_TOP, DICEROLL_BIT_BUTTON_WIDTH,
+                                DICEROLL_BUTTON_HEIGHT,
                                 LIGHT_GREY );
-    coinflip_graphics_fill_rect( &canvas, 530, 328, 270, 152,
+    coinflip_graphics_fill_rect( &canvas,
+                                DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH +
+                                DICEROLL_BIT_BUTTON_WIDTH,
+                                DICEROLL_BUTTON_TOP, DICEROLL_BIT_BUTTON_WIDTH,
+                                DICEROLL_BUTTON_HEIGHT,
                                 DARK_GREY );
-    coinflip_graphics_fill_rect( &canvas, 130, 328, 1, 152, BLACK );
-    coinflip_graphics_fill_rect( &canvas, 260, 328, 1, 152, BLACK );
-    coinflip_graphics_fill_rect( &canvas, 530, 328, 1, 152, BLACK );
+    coinflip_graphics_fill_rect( &canvas, DICEROLL_RESTART_WIDTH,
+                                DICEROLL_BUTTON_TOP, 1,
+                                DICEROLL_BUTTON_HEIGHT, BLACK );
+    coinflip_graphics_fill_rect( &canvas,
+                                DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH,
+                                DICEROLL_BUTTON_TOP, 1,
+                                DICEROLL_BUTTON_HEIGHT, BLACK );
+    coinflip_graphics_fill_rect( &canvas,
+                                DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH +
+                                DICEROLL_BIT_BUTTON_WIDTH,
+                                DICEROLL_BUTTON_TOP, 1,
+                                DICEROLL_BUTTON_HEIGHT, BLACK );
 
     coinflip_graphics_text12( &canvas, 51, 350, "HOLD", WHITE,
                            DARK_RED );
@@ -465,11 +499,11 @@ void coinflip_app_run( void )
             held_button = 0;
             hold_progress = 0;
 
-            if( touch_data.coords[ 0 ].y >= 328U )
+            if( touch_data.coords[ 0 ].y >= DICEROLL_BUTTON_TOP )
             {
                 uint16_t x = touch_data.coords[ 0 ].x;
-                held_button = x < 130U ? 1U : x < 260U ? 2U :
-                              x < 530U ? 3U : 4U;
+                held_button = ( uint8_t )diceroll_layout_button_at(
+                    x, touch_data.coords[ 0 ].y );
                 if( ( held_button == 1U && mnemonic_state_get_bit_count( &state ) == 0U ) ||
                     ( held_button == 2U && ( mnemonic_state_get_bit_count( &state ) == 0U ||
                          mnemonic_state_entropy_complete( &state ) ) ) || ( held_button >= 3U &&
@@ -479,11 +513,14 @@ void coinflip_app_run( void )
                     action_done = true;
                 }
             }
-            else if( touch_data.coords[ 0 ].y >= 32U &&
-                     touch_data.coords[ 0 ].y < 248U )
+            else if( touch_data.coords[ 0 ].y >= DICEROLL_WORD_GRID_TOP &&
+                     touch_data.coords[ 0 ].y < DICEROLL_STATUS_TOP )
             {
-                uint8_t column = ( uint8_t )( touch_data.coords[ 0 ].x / 200U );
-                uint8_t row = ( uint8_t )( ( touch_data.coords[ 0 ].y - 32U ) / 36U );
+                uint8_t column = ( uint8_t )( touch_data.coords[ 0 ].x /
+                                               DICEROLL_WORD_COLUMN_WIDTH );
+                uint8_t row = ( uint8_t )( ( touch_data.coords[ 0 ].y -
+                                             DICEROLL_WORD_GRID_TOP ) /
+                                           DICEROLL_WORD_ROW_HEIGHT );
                 uint8_t word = ( uint8_t )( column * 6U + row + 1U );
                 uint8_t completed = mnemonic_state_entropy_complete( &state )
                                     ? MNEMONIC_WORD_COUNT
