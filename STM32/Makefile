@@ -49,7 +49,7 @@ SRCS = \
 	main.c \
 	bip39_lookup.c \
 	mnemonic_state.c \
-	mnemonic_ui.c \
+	diceroll_ui.c \
 	sha256.c \
 	ui_model.c \
 	utf8.c \

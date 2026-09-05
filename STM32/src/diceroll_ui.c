@@ -1,4 +1,4 @@
-#include "mnemonic_ui.h"
+#include "diceroll_ui.h"
 
 #include "bip39_lookup.h"
 #include "fonts.h"
@@ -273,42 +273,42 @@ static void fill_button(uint16_t x, uint16_t width, uint32_t color)
     BSP_LCD_FillRect(x, DICEROLL_BUTTON_TOP, width, DICEROLL_BUTTON_HEIGHT);
 }
 
-static uint32_t button_color(MnemonicUiButton button, int phrase_complete)
+static uint32_t button_color(DicerollButton button, int phrase_complete)
 {
-    if (phrase_complete && button != MNEMONIC_UI_BUTTON_RESTART) {
+    if (phrase_complete && button != DICEROLL_BUTTON_RESTART) {
         return LCD_COLOR_GRAY;
     }
 
     switch (button) {
-    case MNEMONIC_UI_BUTTON_RESTART:
+    case DICEROLL_BUTTON_RESTART:
         return LCD_COLOR_DARKRED;
-    case MNEMONIC_UI_BUTTON_BACK:
+    case DICEROLL_BUTTON_BACK:
         return LCD_COLOR_ORANGE;
-    case MNEMONIC_UI_BUTTON_ZERO:
+    case DICEROLL_BUTTON_ZERO:
         return LCD_COLOR_LIGHTGRAY;
-    case MNEMONIC_UI_BUTTON_ONE:
+    case DICEROLL_BUTTON_ONE:
         return LCD_COLOR_DARKGRAY;
     default:
         return LCD_COLOR_BLACK;
     }
 }
 
-static void button_bounds(MnemonicUiButton button, uint16_t *x, uint16_t *width)
+static void button_bounds(DicerollButton button, uint16_t *x, uint16_t *width)
 {
     switch (button) {
-    case MNEMONIC_UI_BUTTON_RESTART:
+    case DICEROLL_BUTTON_RESTART:
         *x = 0;
         *width = DICEROLL_RESTART_WIDTH;
         break;
-    case MNEMONIC_UI_BUTTON_BACK:
+    case DICEROLL_BUTTON_BACK:
         *x = DICEROLL_RESTART_WIDTH;
         *width = DICEROLL_BACK_WIDTH;
         break;
-    case MNEMONIC_UI_BUTTON_ZERO:
+    case DICEROLL_BUTTON_ZERO:
         *x = DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH;
         *width = DICEROLL_BIT_BUTTON_WIDTH;
         break;
-    case MNEMONIC_UI_BUTTON_ONE:
+    case DICEROLL_BUTTON_ONE:
         *x = DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH +
              DICEROLL_BIT_BUTTON_WIDTH;
         *width = DICEROLL_BIT_BUTTON_WIDTH;
@@ -327,13 +327,13 @@ static void draw_buttons(int phrase_complete)
     uint16_t one_x = zero_x + DICEROLL_BIT_BUTTON_WIDTH;
 
     fill_button(0, DICEROLL_RESTART_WIDTH,
-                button_color(MNEMONIC_UI_BUTTON_RESTART, phrase_complete));
+                button_color(DICEROLL_BUTTON_RESTART, phrase_complete));
     fill_button(back_x, DICEROLL_BACK_WIDTH,
-                button_color(MNEMONIC_UI_BUTTON_BACK, phrase_complete));
+                button_color(DICEROLL_BUTTON_BACK, phrase_complete));
     fill_button(zero_x, DICEROLL_BIT_BUTTON_WIDTH,
-                button_color(MNEMONIC_UI_BUTTON_ZERO, phrase_complete));
+                button_color(DICEROLL_BUTTON_ZERO, phrase_complete));
     fill_button(one_x, DICEROLL_BIT_BUTTON_WIDTH,
-                button_color(MNEMONIC_UI_BUTTON_ONE, phrase_complete));
+                button_color(DICEROLL_BUTTON_ONE, phrase_complete));
 
     BSP_LCD_SetTextColor(phrase_complete ? LCD_COLOR_DARKGRAY : LCD_COLOR_BLACK);
     BSP_LCD_DrawVLine(back_x, DICEROLL_BUTTON_TOP, DICEROLL_BUTTON_HEIGHT);
@@ -349,7 +349,7 @@ static void draw_buttons(int phrase_complete)
 
     BSP_LCD_SetFont(&Font16);
     BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-    BSP_LCD_SetBackColor(button_color(MNEMONIC_UI_BUTTON_BACK,
+    BSP_LCD_SetBackColor(button_color(DICEROLL_BUTTON_BACK,
                                      phrase_complete));
     display_text(173, 350, "HOLD");
     BSP_LCD_SetFont(&Font20);
@@ -357,7 +357,7 @@ static void draw_buttons(int phrase_complete)
 
     BSP_LCD_SetFont(&Font20);
     BSP_LCD_SetTextColor(phrase_complete ? LCD_COLOR_DARKGRAY : LCD_COLOR_BLACK);
-    BSP_LCD_SetBackColor(button_color(MNEMONIC_UI_BUTTON_ZERO,
+    BSP_LCD_SetBackColor(button_color(DICEROLL_BUTTON_ZERO,
                                      phrase_complete));
     display_text(360, 350, "HEADS");
     BSP_LCD_SetFont(&Font24);
@@ -365,14 +365,14 @@ static void draw_buttons(int phrase_complete)
 
     BSP_LCD_SetFont(&Font20);
     BSP_LCD_SetTextColor(phrase_complete ? LCD_COLOR_DARKGRAY : LCD_COLOR_WHITE);
-    BSP_LCD_SetBackColor(button_color(MNEMONIC_UI_BUTTON_ONE,
+    BSP_LCD_SetBackColor(button_color(DICEROLL_BUTTON_ONE,
                                      phrase_complete));
     display_text(630, 350, "TAILS");
     BSP_LCD_SetFont(&Font24);
     display_text(656, 395, "1");
 }
 
-void mnemonic_ui_draw(const MnemonicState *state)
+void diceroll_ui_draw(const MnemonicState *state)
 {
     selected_word = 0U;
     BSP_LCD_Clear(LCD_COLOR_BLACK);
@@ -383,7 +383,7 @@ void mnemonic_ui_draw(const MnemonicState *state)
     draw_buttons(mnemonic_state_entropy_complete(state));
 }
 
-void mnemonic_ui_update(const MnemonicState *state)
+void diceroll_ui_update(const MnemonicState *state)
 {
     selected_word = 0U;
     draw_word_cells(state);
@@ -391,7 +391,7 @@ void mnemonic_ui_update(const MnemonicState *state)
     draw_buttons(mnemonic_state_entropy_complete(state));
 }
 
-void mnemonic_ui_draw_error(const char *message)
+void diceroll_ui_draw_error(const char *message)
 {
     BSP_LCD_Clear(LCD_COLOR_BLACK);
     BSP_LCD_SetFont(&Font24);
@@ -404,12 +404,12 @@ void mnemonic_ui_draw_error(const char *message)
     display_text_centered(275, "CHECK POWER AND RESTART");
 }
 
-MnemonicUiButton mnemonic_ui_hit_test(uint16_t x, uint16_t y)
+DicerollButton diceroll_ui_hit_test(uint16_t x, uint16_t y)
 {
-    return (MnemonicUiButton)diceroll_layout_button_at( x, y );
+    return diceroll_layout_button_at( x, y );
 }
 
-int mnemonic_ui_select_word_at(const MnemonicState *state,
+int diceroll_ui_select_word_at(const MnemonicState *state,
                                uint16_t x, uint16_t y)
 {
     uint8_t column;
@@ -441,7 +441,7 @@ int mnemonic_ui_select_word_at(const MnemonicState *state,
     return 1;
 }
 
-void mnemonic_ui_show_hold_progress(MnemonicUiButton button,
+void diceroll_ui_show_hold_progress(DicerollButton button,
                                     uint32_t elapsed_ms,
                                     uint32_t required_ms)
 {
@@ -466,7 +466,7 @@ void mnemonic_ui_show_hold_progress(MnemonicUiButton button,
     }
 }
 
-void mnemonic_ui_clear_hold_progress(MnemonicUiButton button,
+void diceroll_ui_clear_hold_progress(DicerollButton button,
                                      int phrase_complete)
 {
     uint16_t x;
