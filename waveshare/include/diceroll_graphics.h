@@ -8,38 +8,38 @@ typedef struct
     uint16_t *pixels;
     uint16_t width;
     uint16_t height;
-} CoinflipCanvas;
+} DicerollCanvas;
 
-void coinflip_graphics_clear( CoinflipCanvas *canvas, uint16_t color );
-void coinflip_graphics_fill_rect( CoinflipCanvas *canvas,
+void diceroll_graphics_clear( DicerollCanvas *canvas, uint16_t color );
+void diceroll_graphics_fill_rect( DicerollCanvas *canvas,
                                  uint16_t x, uint16_t y,
                                  uint16_t width, uint16_t height,
                                  uint16_t color );
-void coinflip_graphics_draw_rect( CoinflipCanvas *canvas,
+void diceroll_graphics_draw_rect( DicerollCanvas *canvas,
                                  uint16_t x, uint16_t y,
                                  uint16_t width, uint16_t height,
                                  uint16_t color );
-void coinflip_graphics_text( CoinflipCanvas *canvas,
+void diceroll_graphics_text( DicerollCanvas *canvas,
                             uint16_t x, uint16_t y, const char *text,
                             uint8_t scale, uint16_t foreground,
                             uint16_t background );
-void coinflip_graphics_text_default( CoinflipCanvas *canvas,
+void diceroll_graphics_text_default( DicerollCanvas *canvas,
                                     uint16_t x, uint16_t y, const char *text,
                                     uint16_t foreground, uint16_t background );
-void coinflip_graphics_text12( CoinflipCanvas *canvas, uint16_t x, uint16_t y,
+void diceroll_graphics_text12( DicerollCanvas *canvas, uint16_t x, uint16_t y,
                               const char *text, uint16_t foreground,
                               uint16_t background );
-void coinflip_graphics_text20( CoinflipCanvas *canvas,
+void diceroll_graphics_text20( DicerollCanvas *canvas,
                               uint16_t x, uint16_t y, const char *text,
                               uint16_t foreground, uint16_t background );
-void coinflip_graphics_text24( CoinflipCanvas *canvas,
+void diceroll_graphics_text24( DicerollCanvas *canvas,
                               uint16_t x, uint16_t y, const char *text,
                               uint16_t foreground, uint16_t background );
-void coinflip_graphics_text24_centered( CoinflipCanvas *canvas,
+void diceroll_graphics_text24_centered( DicerollCanvas *canvas,
                                        uint16_t y, const char *text,
                                        uint16_t foreground,
                                        uint16_t background );
-void coinflip_graphics_text_centered( CoinflipCanvas *canvas,
+void diceroll_graphics_text_centered( DicerollCanvas *canvas,
                                      uint16_t y, const char *text,
                                      uint8_t scale, uint16_t foreground,
                                      uint16_t background );

@@ -157,18 +157,18 @@ static void test_utf8_decoder(void)
     const char *invalid = "\xc0\x80";
     uint32_t codepoint;
 
-    assert(coinflip_utf8_next(&text, &codepoint) == 1);
+    assert(diceroll_utf8_next(&text, &codepoint) == 1);
     assert(codepoint == 0x41U);
-    assert(coinflip_utf8_next(&text, &codepoint) == 1);
+    assert(diceroll_utf8_next(&text, &codepoint) == 1);
     assert(codepoint == 0xe9U);
-    assert(coinflip_utf8_next(&text, &codepoint) == 1);
+    assert(diceroll_utf8_next(&text, &codepoint) == 1);
     assert(codepoint == 0x20acU);
-    assert(coinflip_utf8_next(&text, &codepoint) == 1);
+    assert(diceroll_utf8_next(&text, &codepoint) == 1);
     assert(codepoint == 0x10348U);
-    assert(coinflip_utf8_next(&text, &codepoint) == 0);
+    assert(diceroll_utf8_next(&text, &codepoint) == 0);
 
-    assert(coinflip_utf8_next(&invalid, &codepoint) == -1);
-    assert(coinflip_utf8_next(NULL, &codepoint) == -1);
+    assert(diceroll_utf8_next(&invalid, &codepoint) == -1);
+    assert(diceroll_utf8_next(NULL, &codepoint) == -1);
 }
 
 static void load_entropy(MnemonicState *state,

@@ -65,7 +65,7 @@ add_library(bip39_graphics STATIC
 target_include_directories(bip39_graphics PUBLIC include ../common)
 target_link_libraries(bip39_graphics PUBLIC bip39_fonts)
 
-set(COINFLIP_LANGUAGES
+set(DICEROLL_LANGUAGES
     english
     czech
     french
@@ -78,7 +78,7 @@ function(add_bip39_variant language target_name)
         ../common/bip39_lookup.c)
     target_include_directories(bip39_lookup_${language} PUBLIC include ../common)
     target_compile_definitions(bip39_lookup_${language} PRIVATE
-        COINFLIP_WORDLIST_FILE=\"wordlists/${language}.inc\")
+        DICEROLL_WORDLIST_FILE=\"wordlists/${language}.inc\")
 
     add_executable(${target_name}
         src/main.c
@@ -96,7 +96,7 @@ function(add_bip39_variant language target_name)
 endfunction()
 
 add_bip39_variant(english bip39_waveshare)
-foreach(language IN LISTS COINFLIP_LANGUAGES)
+foreach(language IN LISTS DICEROLL_LANGUAGES)
     if(NOT language STREQUAL "english")
         add_bip39_variant(${language} bip39_waveshare_${language})
     endif()

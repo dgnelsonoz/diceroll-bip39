@@ -61,7 +61,7 @@ static void display_text(uint16_t x, uint16_t y, const char *text)
     int result;
     int have_previous = 0;
 
-    while ((result = coinflip_utf8_next(&cursor, &codepoint)) > 0) {
+    while ((result = diceroll_utf8_next(&cursor, &codepoint)) > 0) {
         if (is_combining_mark(codepoint) && have_previous) {
             draw_combining_mark(previous_x, y, codepoint);
             continue;
@@ -85,7 +85,7 @@ static uint16_t display_text_width(const char *text)
     uint32_t codepoint;
     int result;
 
-    while ((result = coinflip_utf8_next(&cursor, &codepoint)) > 0) {
+    while ((result = diceroll_utf8_next(&cursor, &codepoint)) > 0) {
         if (!is_combining_mark(codepoint)) {
             ++glyphs;
         }

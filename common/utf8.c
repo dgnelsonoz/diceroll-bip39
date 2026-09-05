@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-int coinflip_utf8_next( const char **text, uint32_t *codepoint )
+int diceroll_utf8_next( const char **text, uint32_t *codepoint )
 {
     const unsigned char *bytes;
     uint32_t value;

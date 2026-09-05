@@ -8,7 +8,7 @@
 
 extern const sFONT Font16Default;
 
-static void set_pixel( CoinflipCanvas *canvas, uint16_t x, uint16_t y, uint16_t color )
+static void set_pixel( DicerollCanvas *canvas, uint16_t x, uint16_t y, uint16_t color )
 {
     if( canvas == NULL || canvas->pixels == NULL || x >= canvas->width || y >= canvas->height )
         return;
@@ -16,7 +16,7 @@ static void set_pixel( CoinflipCanvas *canvas, uint16_t x, uint16_t y, uint16_t 
     canvas->pixels[ ( uint32_t )y * canvas->width + x ] = color;
 }
 
-void coinflip_graphics_clear( CoinflipCanvas *canvas, uint16_t color )
+void diceroll_graphics_clear( DicerollCanvas *canvas, uint16_t color )
 {
     if( canvas == NULL || canvas->pixels == NULL )
         return;
@@ -25,7 +25,7 @@ void coinflip_graphics_clear( CoinflipCanvas *canvas, uint16_t color )
         canvas->pixels[ pixel ] = color;
 }
 
-void coinflip_graphics_fill_rect( CoinflipCanvas *canvas, uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color )
+void diceroll_graphics_fill_rect( DicerollCanvas *canvas, uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color )
 {
     if( canvas == NULL || x >= canvas->width || y >= canvas->height )
         return;
@@ -46,18 +46,18 @@ void coinflip_graphics_fill_rect( CoinflipCanvas *canvas, uint16_t x, uint16_t y
     }
 }
 
-void coinflip_graphics_draw_rect( CoinflipCanvas *canvas, uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color )
+void diceroll_graphics_draw_rect( DicerollCanvas *canvas, uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color )
 {
     if( width == 0U || height == 0U )
         return;
 
-    coinflip_graphics_fill_rect( canvas, x, y, width, 1, color );
-    coinflip_graphics_fill_rect( canvas, x, ( uint16_t )( y + height - 1U ), width, 1, color );
-    coinflip_graphics_fill_rect( canvas, x, y, 1, height, color );
-    coinflip_graphics_fill_rect( canvas, ( uint16_t )( x + width - 1U ), y, 1, height, color );
+    diceroll_graphics_fill_rect( canvas, x, y, width, 1, color );
+    diceroll_graphics_fill_rect( canvas, x, ( uint16_t )( y + height - 1U ), width, 1, color );
+    diceroll_graphics_fill_rect( canvas, x, y, 1, height, color );
+    diceroll_graphics_fill_rect( canvas, ( uint16_t )( x + width - 1U ), y, 1, height, color );
 }
 
-static void draw_character( CoinflipCanvas *canvas, const sFONT *font, uint16_t x, uint16_t y, char character, uint8_t scale, uint16_t foreground, uint16_t background )
+static void draw_character( DicerollCanvas *canvas, const sFONT *font, uint16_t x, uint16_t y, char character, uint8_t scale, uint16_t foreground, uint16_t background )
 {
     const uint16_t bytes_per_row = ( uint16_t )( ( font->Width + 7U ) / 8U );
     const size_t glyph_size = ( size_t )font->Height * bytes_per_row;
@@ -76,12 +76,12 @@ static void draw_character( CoinflipCanvas *canvas, const sFONT *font, uint16_t 
             const uint16_t color = ( bits & ( 0x80U >> ( column % 8U ) ) )
                                    ? foreground : background;
 
-            coinflip_graphics_fill_rect( canvas, ( uint16_t )( x + column * scale ), ( uint16_t )( y + row * scale ), scale, scale, color );
+            diceroll_graphics_fill_rect( canvas, ( uint16_t )( x + column * scale ), ( uint16_t )( y + row * scale ), scale, scale, color );
         }
     }
 }
 
-static void draw_combining_mark( CoinflipCanvas *canvas, const sFONT *font,
+static void draw_combining_mark( DicerollCanvas *canvas, const sFONT *font,
                                 uint16_t x, uint16_t y, uint32_t codepoint,
                                 uint16_t color )
 {
@@ -89,26 +89,26 @@ static void draw_combining_mark( CoinflipCanvas *canvas, const sFONT *font,
 
     if( codepoint == 0x0301U )
     {
-        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center + 1U ),
+        diceroll_graphics_fill_rect( canvas, ( uint16_t )( center + 1U ),
                                     ( uint16_t )( y + 1U ),
                                     2U, 2U, color );
-        coinflip_graphics_fill_rect( canvas, center, ( uint16_t )( y + 2U ),
+        diceroll_graphics_fill_rect( canvas, center, ( uint16_t )( y + 2U ),
                                     2U, 2U, color );
     }
     else if( codepoint == 0x0300U )
     {
-        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center - 2U ), y,
+        diceroll_graphics_fill_rect( canvas, ( uint16_t )( center - 2U ), y,
                                     2U, 2U, color );
-        coinflip_graphics_fill_rect( canvas, center, ( uint16_t )( y + 2U ),
+        diceroll_graphics_fill_rect( canvas, center, ( uint16_t )( y + 2U ),
                                     2U, 2U, color );
     }
     else if( codepoint == 0x0303U )
     {
-        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center - 2U ),
+        diceroll_graphics_fill_rect( canvas, ( uint16_t )( center - 2U ),
                                     ( uint16_t )( y + 1U ), 2U, 1U, color );
-        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center ),
+        diceroll_graphics_fill_rect( canvas, ( uint16_t )( center ),
                                     ( uint16_t )( y + 2U ), 2U, 1U, color );
-        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center + 2U ),
+        diceroll_graphics_fill_rect( canvas, ( uint16_t )( center + 2U ),
                                     ( uint16_t )( y + 1U ), 2U, 1U, color );
     }
 }
@@ -126,7 +126,7 @@ static size_t utf8_glyph_count( const char *text )
     size_t count = 0U;
     int result;
 
-    while( ( result = coinflip_utf8_next( &cursor, &codepoint ) ) > 0 )
+    while( ( result = diceroll_utf8_next( &cursor, &codepoint ) ) > 0 )
     {
         if( !is_combining_mark( codepoint ) )
             ++count;
@@ -136,7 +136,7 @@ static size_t utf8_glyph_count( const char *text )
     return count;
 }
 
-static uint16_t draw_utf8_text( CoinflipCanvas *canvas, const sFONT *font,
+static uint16_t draw_utf8_text( DicerollCanvas *canvas, const sFONT *font,
                                uint16_t x, uint16_t y, const char *text,
                                uint8_t scale, uint16_t foreground,
                                uint16_t background )
@@ -146,7 +146,7 @@ static uint16_t draw_utf8_text( CoinflipCanvas *canvas, const sFONT *font,
     uint16_t last_x = x;
     uint8_t last_width = 0U;
 
-    while( coinflip_utf8_next( &cursor, &codepoint ) > 0 )
+    while( diceroll_utf8_next( &cursor, &codepoint ) > 0 )
     {
         if( is_combining_mark( codepoint ) )
         {
@@ -167,7 +167,7 @@ static uint16_t draw_utf8_text( CoinflipCanvas *canvas, const sFONT *font,
     return x;
 }
 
-void coinflip_graphics_text( CoinflipCanvas *canvas, uint16_t x, uint16_t y, const char *text, uint8_t scale, uint16_t foreground, uint16_t background )
+void diceroll_graphics_text( DicerollCanvas *canvas, uint16_t x, uint16_t y, const char *text, uint8_t scale, uint16_t foreground, uint16_t background )
 {
     if( text == NULL || scale == 0U )
         return;
@@ -175,7 +175,7 @@ void coinflip_graphics_text( CoinflipCanvas *canvas, uint16_t x, uint16_t y, con
     draw_utf8_text( canvas, &Font16, x, y, text, scale, foreground, background );
 }
 
-void coinflip_graphics_text_default( CoinflipCanvas *canvas, uint16_t x,
+void diceroll_graphics_text_default( DicerollCanvas *canvas, uint16_t x,
                                     uint16_t y, const char *text,
                                     uint16_t foreground, uint16_t background )
 {
@@ -184,7 +184,7 @@ void coinflip_graphics_text_default( CoinflipCanvas *canvas, uint16_t x,
     draw_utf8_text( canvas, &Font16Default, x, y, text, 1, foreground, background );
 }
 
-void coinflip_graphics_text12( CoinflipCanvas *canvas, uint16_t x,
+void diceroll_graphics_text12( DicerollCanvas *canvas, uint16_t x,
                               uint16_t y, const char *text,
                               uint16_t foreground, uint16_t background )
 {
@@ -194,7 +194,7 @@ void coinflip_graphics_text12( CoinflipCanvas *canvas, uint16_t x,
 }
 
 
-void coinflip_graphics_text20( CoinflipCanvas *canvas, uint16_t x, uint16_t y, const char *text, uint16_t foreground, uint16_t background )
+void diceroll_graphics_text20( DicerollCanvas *canvas, uint16_t x, uint16_t y, const char *text, uint16_t foreground, uint16_t background )
 {
     if( text == NULL )
         return;
@@ -202,7 +202,7 @@ void coinflip_graphics_text20( CoinflipCanvas *canvas, uint16_t x, uint16_t y, c
     draw_utf8_text( canvas, &Font20, x, y, text, 1, foreground, background );
 }
 
-void coinflip_graphics_text24( CoinflipCanvas *canvas, uint16_t x, uint16_t y, const char *text, uint16_t foreground, uint16_t background )
+void diceroll_graphics_text24( DicerollCanvas *canvas, uint16_t x, uint16_t y, const char *text, uint16_t foreground, uint16_t background )
 {
     if( text == NULL )
         return;
@@ -210,7 +210,7 @@ void coinflip_graphics_text24( CoinflipCanvas *canvas, uint16_t x, uint16_t y, c
     draw_utf8_text( canvas, &Font24, x, y, text, 1, foreground, background );
 }
 
-void coinflip_graphics_text24_centered( CoinflipCanvas *canvas, uint16_t y, const char *text, uint16_t foreground, uint16_t background )
+void diceroll_graphics_text24_centered( DicerollCanvas *canvas, uint16_t y, const char *text, uint16_t foreground, uint16_t background )
 {
     size_t width;
     uint16_t x;
@@ -221,10 +221,10 @@ void coinflip_graphics_text24_centered( CoinflipCanvas *canvas, uint16_t y, cons
     width = utf8_glyph_count( text ) * Font24.Width;
     x = width < canvas->width ? ( uint16_t )( ( canvas->width - width ) / 2U ) : 0U;
 
-    coinflip_graphics_text24( canvas, x, y, text, foreground, background );
+    diceroll_graphics_text24( canvas, x, y, text, foreground, background );
 }
 
-void coinflip_graphics_text_centered( CoinflipCanvas *canvas, uint16_t y, const char *text, uint8_t scale, uint16_t foreground, uint16_t background )
+void diceroll_graphics_text_centered( DicerollCanvas *canvas, uint16_t y, const char *text, uint8_t scale, uint16_t foreground, uint16_t background )
 {
     size_t width;
     uint16_t x;
@@ -235,5 +235,5 @@ void coinflip_graphics_text_centered( CoinflipCanvas *canvas, uint16_t y, const 
     width = utf8_glyph_count( text ) * Font16.Width * scale;
     x = width < canvas->width ? ( uint16_t )( ( canvas->width - width ) / 2U ) : 0U;
 
-    coinflip_graphics_text( canvas, x, y, text, scale, foreground, background );
+    diceroll_graphics_text( canvas, x, y, text, scale, foreground, background );
 }

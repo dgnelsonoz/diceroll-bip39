@@ -3,9 +3,13 @@
 
 #include <stdint.h>
 
-uint16_t coinflip_ui_show_hold_progress( uint16_t *pixels, uint8_t button,
+#include "layout.h"
+
+uint16_t diceroll_ui_show_hold_progress( uint16_t *pixels,
+                                        DicerollButton button,
                                         int64_t elapsed_us,
                                         uint16_t previous_progress );
-void coinflip_ui_clear_hold_progress( uint16_t *pixels, uint8_t button );
+void diceroll_ui_clear_hold_progress( uint16_t *pixels,
+                                      DicerollButton button );
 
 #endif

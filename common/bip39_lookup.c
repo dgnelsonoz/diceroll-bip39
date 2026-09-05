@@ -4,8 +4,8 @@ enum{ BIP39_WORD_COUNT = 2048 };
 
 static const char *wordlist[ BIP39_WORD_COUNT ] =
 {
-#ifdef COINFLIP_WORDLIST_FILE
-#include COINFLIP_WORDLIST_FILE
+#ifdef DICEROLL_WORDLIST_FILE
+#include DICEROLL_WORDLIST_FILE
 #else
 #include "wordlists/english.inc"
 #endif
