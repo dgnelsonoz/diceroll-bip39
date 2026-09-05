@@ -1,6 +1,6 @@
 #include "bip39_lookup.h"
 
-enum{ BIP39_WORD_COUNT = 2048 };
+enum { BIP39_WORD_COUNT = 2048 };
 
 static const char *wordlist[ BIP39_WORD_COUNT ] =
 {

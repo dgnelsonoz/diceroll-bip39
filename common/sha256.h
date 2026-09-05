@@ -6,7 +6,6 @@
 
 enum { SHA256_DIGEST_SIZE = 32 };
 
-void sha256(const uint8_t *data, size_t length,
-            uint8_t digest[SHA256_DIGEST_SIZE]);
+void sha256( const uint8_t *data, size_t length, uint8_t digest[ SHA256_DIGEST_SIZE ] );
 
 #endif

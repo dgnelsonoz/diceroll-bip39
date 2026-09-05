@@ -2,7 +2,8 @@
 
 #include <string.h>
 
-static const uint32_t round_constants[64] = {
+static const uint32_t round_constants[ 64 ] =
+{
     0x428a2f98U, 0x71374491U, 0xb5c0fbcfU, 0xe9b5dba5U,
     0x3956c25bU, 0x59f111f1U, 0x923f82a4U, 0xab1c5ed5U,
     0xd807aa98U, 0x12835b01U, 0x243185beU, 0x550c7dc3U,
@@ -21,61 +22,62 @@ static const uint32_t round_constants[64] = {
     0x90befffaU, 0xa4506cebU, 0xbef9a3f7U, 0xc67178f2U
 };
 
-static uint32_t rotate_right(uint32_t value, uint8_t amount)
+static uint32_t rotate_right( uint32_t value, uint8_t amount )
 {
-    return (value >> amount) | (value << (32U - amount));
+    return ( value >> amount ) | ( value << ( 32U - amount ) );
 }
 
-static uint32_t load_be32(const uint8_t *bytes)
+static uint32_t load_be32( const uint8_t *bytes )
 {
-    return ((uint32_t)bytes[0] << 24) |
-           ((uint32_t)bytes[1] << 16) |
-           ((uint32_t)bytes[2] << 8) |
-           (uint32_t)bytes[3];
+    return ( ( uint32_t )bytes[ 0 ] << 24 ) |
+           ( ( uint32_t )bytes[ 1 ] << 16 ) |
+           ( ( uint32_t )bytes[ 2 ] << 8 ) |
+           ( uint32_t )bytes[ 3 ];
 }
 
-static void store_be32(uint8_t *bytes, uint32_t value)
+static void store_be32( uint8_t *bytes, uint32_t value )
 {
-    bytes[0] = (uint8_t)(value >> 24);
-    bytes[1] = (uint8_t)(value >> 16);
-    bytes[2] = (uint8_t)(value >> 8);
-    bytes[3] = (uint8_t)value;
+    bytes[ 0 ] = ( uint8_t )( value >> 24 );
+    bytes[ 1 ] = ( uint8_t )( value >> 16 );
+    bytes[ 2 ] = ( uint8_t )( value >> 8 );
+    bytes[ 3 ] = ( uint8_t )value;
 }
 
-static void process_block(uint32_t state[8], const uint8_t block[64])
+static void process_block( uint32_t state[ 8 ], const uint8_t block[ 64 ] )
 {
-    uint32_t schedule[64];
-    uint32_t a = state[0];
-    uint32_t b = state[1];
-    uint32_t c = state[2];
-    uint32_t d = state[3];
-    uint32_t e = state[4];
-    uint32_t f = state[5];
-    uint32_t g = state[6];
-    uint32_t h = state[7];
+    uint32_t schedule[ 64 ];
+    uint32_t a = state[ 0 ];
+    uint32_t b = state[ 1 ];
+    uint32_t c = state[ 2 ];
+    uint32_t d = state[ 3 ];
+    uint32_t e = state[ 4 ];
+    uint32_t f = state[ 5 ];
+    uint32_t g = state[ 6 ];
+    uint32_t h = state[ 7 ];
     uint32_t ii;
 
-    for (ii = 0; ii < 16U; ii++) {
-        schedule[ii] = load_be32(block + (ii * 4U));
-    }
-    for (ii = 16U; ii < 64U; ii++) {
-        uint32_t s0 = rotate_right(schedule[ii - 15U], 7) ^
-                      rotate_right(schedule[ii - 15U], 18) ^
-                      (schedule[ii - 15U] >> 3);
-        uint32_t s1 = rotate_right(schedule[ii - 2U], 17) ^
-                      rotate_right(schedule[ii - 2U], 19) ^
-                      (schedule[ii - 2U] >> 10);
-        schedule[ii] = schedule[ii - 16U] + s0 + schedule[ii - 7U] + s1;
+    for( ii = 0; ii < 16U; ++ii )
+        schedule[ ii ] = load_be32( block + ( ii * 4U ) );
+    for( ii = 16U; ii < 64U; ++ii )
+    {
+        uint32_t s0 = rotate_right( schedule[ ii - 15U ], 7 ) ^
+                      rotate_right( schedule[ ii - 15U ], 18 ) ^
+                      ( schedule[ ii - 15U ] >> 3 );
+        uint32_t s1 = rotate_right( schedule[ ii - 2U ], 17 ) ^
+                      rotate_right( schedule[ ii - 2U ], 19 ) ^
+                      ( schedule[ ii - 2U ] >> 10 );
+        schedule[ ii ] = schedule[ ii - 16U ] + s0 + schedule[ ii - 7U ] + s1;
     }
 
-    for (ii = 0; ii < 64U; ii++) {
-        uint32_t sum1 = rotate_right(e, 6) ^ rotate_right(e, 11) ^
-                        rotate_right(e, 25);
-        uint32_t choose = (e & f) ^ (~e & g);
-        uint32_t temp1 = h + sum1 + choose + round_constants[ii] + schedule[ii];
-        uint32_t sum0 = rotate_right(a, 2) ^ rotate_right(a, 13) ^
-                        rotate_right(a, 22);
-        uint32_t majority = (a & b) ^ (a & c) ^ (b & c);
+    for( ii = 0; ii < 64U; ++ii )
+    {
+        uint32_t sum1 = rotate_right( e, 6 ) ^ rotate_right( e, 11 ) ^
+                        rotate_right( e, 25 );
+        uint32_t choose = ( e & f ) ^ ( ~e & g );
+        uint32_t temp1 = h + sum1 + choose + round_constants[ ii ] + schedule[ ii ];
+        uint32_t sum0 = rotate_right( a, 2 ) ^ rotate_right( a, 13 ) ^
+                        rotate_right( a, 22 );
+        uint32_t majority = ( a & b ) ^ ( a & c ) ^ ( b & c );
         uint32_t temp2 = sum0 + majority;
 
         h = g;
@@ -88,51 +90,48 @@ static void process_block(uint32_t state[8], const uint8_t block[64])
         a = temp1 + temp2;
     }
 
-    state[0] += a;
-    state[1] += b;
-    state[2] += c;
-    state[3] += d;
-    state[4] += e;
-    state[5] += f;
-    state[6] += g;
-    state[7] += h;
+    state[ 0 ] += a;
+    state[ 1 ] += b;
+    state[ 2 ] += c;
+    state[ 3 ] += d;
+    state[ 4 ] += e;
+    state[ 5 ] += f;
+    state[ 6 ] += g;
+    state[ 7 ] += h;
 }
 
-void sha256(const uint8_t *data, size_t length,
-            uint8_t digest[SHA256_DIGEST_SIZE])
+void sha256( const uint8_t *data, size_t length, uint8_t digest[ SHA256_DIGEST_SIZE ] )
 {
-    uint32_t state[8] = {
+    uint32_t state[ 8 ] =
+    {
         0x6a09e667U, 0xbb67ae85U, 0x3c6ef372U, 0xa54ff53aU,
         0x510e527fU, 0x9b05688cU, 0x1f83d9abU, 0x5be0cd19U
     };
-    uint8_t final_blocks[128] = { 0 };
-    uint64_t bit_length = (uint64_t)length * 8U;
+    uint8_t final_blocks[ 128 ] = { 0 };
+    uint64_t bit_length = ( uint64_t )length * 8U;
     size_t remaining;
     size_t final_length;
     size_t ii;
 
-    while (length >= 64U) {
-        process_block(state, data);
+    while( length >= 64U )
+    {
+        process_block( state, data );
         data += 64;
         length -= 64U;
     }
 
     remaining = length;
-    if (remaining > 0U) {
-        memcpy(final_blocks, data, remaining);
-    }
-    final_blocks[remaining] = 0x80U;
+    if( remaining > 0U )
+        memcpy( final_blocks, data, remaining );
+    final_blocks[ remaining ] = 0x80U;
     final_length = remaining < 56U ? 64U : 128U;
-    for (ii = 0; ii < 8U; ii++) {
-        final_blocks[final_length - 1U - ii] = (uint8_t)(bit_length >> (ii * 8U));
-    }
+    for( ii = 0; ii < 8U; ++ii )
+        final_blocks[ final_length - 1U - ii ] = ( uint8_t )( bit_length >> ( ii * 8U ) );
 
-    process_block(state, final_blocks);
-    if (final_length == 128U) {
-        process_block(state, final_blocks + 64);
-    }
+    process_block( state, final_blocks );
+    if( final_length == 128U )
+        process_block( state, final_blocks + 64 );
 
-    for (ii = 0; ii < 8U; ii++) {
-        store_be32(digest + (ii * 4U), state[ii]);
-    }
+    for( ii = 0; ii < 8U; ++ii )
+        store_be32( digest + ( ii * 4U ), state[ ii ] );
 }

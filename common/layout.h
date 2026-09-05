@@ -30,8 +30,7 @@ typedef enum
     DICEROLL_BUTTON_ONE
 } DicerollButton;
 
-static inline void diceroll_layout_word_cell( uint8_t word_number,
-                                              uint16_t *x, uint16_t *y )
+static inline void diceroll_layout_word_cell( uint8_t word_number, uint16_t *x, uint16_t *y )
 {
     uint8_t zero_based = ( uint8_t )( word_number - 1U );
 
@@ -40,20 +39,16 @@ static inline void diceroll_layout_word_cell( uint8_t word_number,
                        ( uint16_t )( zero_based % 6U ) * DICEROLL_WORD_ROW_HEIGHT );
 }
 
-static inline DicerollButton diceroll_layout_button_at( uint16_t x,
-                                                         uint16_t y )
+static inline DicerollButton diceroll_layout_button_at( uint16_t x, uint16_t y )
 {
-    if( y < DICEROLL_BUTTON_TOP ||
-        y >= DICEROLL_BUTTON_TOP + DICEROLL_BUTTON_HEIGHT ||
-        x >= DICEROLL_DISPLAY_WIDTH )
+    if( y < DICEROLL_BUTTON_TOP || y >= DICEROLL_BUTTON_TOP + DICEROLL_BUTTON_HEIGHT || x >= DICEROLL_DISPLAY_WIDTH )
         return DICEROLL_BUTTON_NONE;
 
     if( x < DICEROLL_RESTART_WIDTH )
         return DICEROLL_BUTTON_RESTART;
     if( x < DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH )
         return DICEROLL_BUTTON_BACK;
-    if( x < DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH +
-            DICEROLL_BIT_BUTTON_WIDTH )
+    if( x < DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH + DICEROLL_BIT_BUTTON_WIDTH )
         return DICEROLL_BUTTON_ZERO;
     return DICEROLL_BUTTON_ONE;
 }

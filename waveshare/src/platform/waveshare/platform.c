@@ -50,7 +50,7 @@ uint16_t *waveshare_platform_display_init( void )
     if( !bsp_display_new_st7262( &display, &display_info ) )
         panic( "display creation failed" );
 
-    display->init();
+    display->init( );
     return rgb.framebuffer1;
 }
 
@@ -60,17 +60,17 @@ void waveshare_platform_touch_init( void )
     touch_info.height = DICEROLL_DISPLAY_HEIGHT;
     touch_info.rotation = 0U;
 
-    bsp_i2c_init();
+    bsp_i2c_init( );
     if( !bsp_touch_new_gt911( &touch, &touch_info ) )
         panic( "touch creation failed" );
-    touch->init();
+    touch->init( );
 }
 
 bool waveshare_platform_touch_read( uint16_t *x, uint16_t *y )
 {
     bsp_touch_data_t touch_data;
 
-    touch->read();
+    touch->read( );
     if( !touch->get_data( &touch_data ) || touch_data.points == 0U )
         return false;
 
@@ -81,7 +81,7 @@ bool waveshare_platform_touch_read( uint16_t *x, uint16_t *y )
 
 uint64_t waveshare_platform_time_us( void )
 {
-    return time_us_64();
+    return time_us_64( );
 }
 
 void waveshare_platform_sleep_ms( uint32_t milliseconds )

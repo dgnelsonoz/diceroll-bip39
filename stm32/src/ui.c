@@ -12,86 +12,93 @@
 #include <string.h>
 
 typedef char button_widths_must_fill_display[
-    (DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH +
-     (2 * DICEROLL_BIT_BUTTON_WIDTH) == DICEROLL_DISPLAY_WIDTH)
-    ? 1 : -1];
+    ( DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH +
+      ( 2 * DICEROLL_BIT_BUTTON_WIDTH ) == DICEROLL_DISPLAY_WIDTH )
+    ? 1 : -1 ];
 typedef char vertical_regions_must_fill_display[
-    (DICEROLL_TITLE_HEIGHT + DICEROLL_WORD_GRID_HEIGHT +
-     DICEROLL_STATUS_HEIGHT + DICEROLL_BUTTON_HEIGHT ==
-     DICEROLL_DISPLAY_HEIGHT)
-    ? 1 : -1];
+    ( DICEROLL_TITLE_HEIGHT + DICEROLL_WORD_GRID_HEIGHT +
+      DICEROLL_STATUS_HEIGHT + DICEROLL_BUTTON_HEIGHT ==
+      DICEROLL_DISPLAY_HEIGHT )
+    ? 1 : -1 ];
 typedef char word_rows_must_fill_grid[
-    (6 * DICEROLL_WORD_ROW_HEIGHT == DICEROLL_WORD_GRID_HEIGHT)
-    ? 1 : -1];
+    ( 6 * DICEROLL_WORD_ROW_HEIGHT == DICEROLL_WORD_GRID_HEIGHT )
+    ? 1 : -1 ];
 
 static uint8_t selected_word;
 
-static int is_combining_mark(uint32_t codepoint)
+static int is_combining_mark( uint32_t codepoint )
 {
     return codepoint == 0x0300U || codepoint == 0x0301U ||
            codepoint == 0x0303U;
 }
 
-static void draw_combining_mark(uint16_t x, uint16_t y, uint32_t codepoint)
+static void draw_combining_mark( uint16_t x, uint16_t y, uint32_t codepoint )
 {
-    const sFONT *font = BSP_LCD_GetFont();
-    uint16_t center = (uint16_t)(x + font->Width / 2U);
-    uint32_t color = BSP_LCD_GetTextColor();
+    const sFONT *font = BSP_LCD_GetFont( );
+    uint16_t center = ( uint16_t )( x + font->Width / 2U );
+    uint32_t color = BSP_LCD_GetTextColor( );
 
-    if (codepoint == 0x0301U) {
-        BSP_LCD_DrawPixel(center - 2U, y + 1U, color);
-        BSP_LCD_DrawPixel(center - 1U, y, color);
-    } else if (codepoint == 0x0300U) {
-        BSP_LCD_DrawPixel(center + 1U, y, color);
-        BSP_LCD_DrawPixel(center + 2U, y + 1U, color);
-    } else if (codepoint == 0x0303U) {
-        BSP_LCD_DrawPixel(center - 2U, y + 1U, color);
-        BSP_LCD_DrawPixel(center - 1U, y, color);
-        BSP_LCD_DrawPixel(center, y + 1U, color);
-        BSP_LCD_DrawPixel(center + 1U, y, color);
-        BSP_LCD_DrawPixel(center + 2U, y + 1U, color);
+    if( codepoint == 0x0301U )
+    {
+        BSP_LCD_DrawPixel( center - 2U, y + 1U, color );
+        BSP_LCD_DrawPixel( center - 1U, y, color );
+    }
+    else if( codepoint == 0x0300U )
+    {
+        BSP_LCD_DrawPixel( center + 1U, y, color );
+        BSP_LCD_DrawPixel( center + 2U, y + 1U, color );
+    }
+    else if( codepoint == 0x0303U )
+    {
+        BSP_LCD_DrawPixel( center - 2U, y + 1U, color );
+        BSP_LCD_DrawPixel( center - 1U, y, color );
+        BSP_LCD_DrawPixel( center, y + 1U, color );
+        BSP_LCD_DrawPixel( center + 1U, y, color );
+        BSP_LCD_DrawPixel( center + 2U, y + 1U, color );
     }
 }
 
-static void display_text(uint16_t x, uint16_t y, const char *text)
+static void display_text( uint16_t x, uint16_t y, const char *text )
 {
     const char *cursor = text;
     uint16_t previous_x = x;
-    uint16_t advance = BSP_LCD_GetFont()->Width;
+    uint16_t advance = BSP_LCD_GetFont( )->Width;
     uint32_t codepoint;
     int result;
     int have_previous = 0;
 
-    while ((result = diceroll_utf8_next(&cursor, &codepoint)) > 0) {
-        if (is_combining_mark(codepoint) && have_previous) {
-            draw_combining_mark(previous_x, y, codepoint);
+    while( ( result = diceroll_utf8_next( &cursor, &codepoint ) ) > 0 )
+    {
+        if( is_combining_mark( codepoint ) && have_previous )
+        {
+            draw_combining_mark( previous_x, y, codepoint );
             continue;
         }
 
         previous_x = x;
         have_previous = 1;
-        BSP_LCD_DisplayChar(x, y,
-                            (uint8_t)(codepoint >= ' ' && codepoint <= '~'
-                                      ? codepoint : '?'));
-        x = (uint16_t)(x + advance);
+        BSP_LCD_DisplayChar( x, y,
+                             ( uint8_t )( codepoint >= ' ' && codepoint <= '~'
+                                          ? codepoint : '?' ) );
+        x = ( uint16_t )( x + advance );
     }
 
-    (void)result;
+    ( void )result;
 }
 
-static uint16_t display_text_width(const char *text)
+static uint16_t display_text_width( const char *text )
 {
     const char *cursor = text;
     uint16_t glyphs = 0;
     uint32_t codepoint;
     int result;
 
-    while ((result = diceroll_utf8_next(&cursor, &codepoint)) > 0) {
-        if (!is_combining_mark(codepoint)) {
+    while( ( result = diceroll_utf8_next( &cursor, &codepoint ) ) > 0 )
+    {
+        if( !is_combining_mark( codepoint ) )
             ++glyphs;
-        }
     }
-    return (uint16_t)(glyphs * BSP_LCD_GetFont()->Width);
+    return ( uint16_t )( glyphs * BSP_LCD_GetFont( )->Width );
 }
 
 static uint8_t utf8_character_count( const char *text )
@@ -106,13 +113,13 @@ static uint8_t utf8_character_count( const char *text )
     return count;
 }
 
-static void display_text_centered(uint16_t y, const char *text)
+static void display_text_centered( uint16_t y, const char *text )
 {
-    uint16_t width = display_text_width(text);
+    uint16_t width = display_text_width( text );
     uint16_t x = width < DICEROLL_DISPLAY_WIDTH
-                 ? (uint16_t)((DICEROLL_DISPLAY_WIDTH - width) / 2U) : 0U;
+                 ? ( uint16_t )( ( DICEROLL_DISPLAY_WIDTH - width ) / 2U ) : 0U;
 
-    display_text(x, y, text);
+    display_text( x, y, text );
 }
 
 static void draw_title( void )
@@ -126,26 +133,24 @@ static void draw_title( void )
     BSP_LCD_DrawHLine( 0, DICEROLL_TITLE_HEIGHT - 1U, DICEROLL_DISPLAY_WIDTH );
 }
 
-static void get_word_cell(uint8_t word_number, uint16_t *x, uint16_t *y)
+static void get_word_cell( uint8_t word_number, uint16_t *x, uint16_t *y )
 {
-    diceroll_layout_word_cell(word_number, x, y);
+    diceroll_layout_word_cell( word_number, x, y );
 }
 
-static void draw_grid_lines(void)
+static void draw_grid_lines( void )
 {
     uint8_t column;
     uint8_t row;
 
-    BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-    for (column = 1; column < 4; column++) {
-        BSP_LCD_DrawVLine((uint16_t)column * DICEROLL_WORD_COLUMN_WIDTH,
-                          DICEROLL_WORD_GRID_TOP, DICEROLL_WORD_GRID_HEIGHT);
-    }
-    for (row = 1; row <= 6; row++) {
-        BSP_LCD_DrawHLine(0, DICEROLL_WORD_GRID_TOP +
-                          (uint16_t)row * DICEROLL_WORD_ROW_HEIGHT - 1U,
-                          DICEROLL_DISPLAY_WIDTH);
-    }
+    BSP_LCD_SetTextColor( LCD_COLOR_WHITE );
+    for( column = 1; column < 4; ++column )
+        BSP_LCD_DrawVLine( ( uint16_t )column * DICEROLL_WORD_COLUMN_WIDTH,
+                           DICEROLL_WORD_GRID_TOP, DICEROLL_WORD_GRID_HEIGHT );
+    for( row = 1; row <= 6; ++row )
+        BSP_LCD_DrawHLine( 0, DICEROLL_WORD_GRID_TOP +
+                           ( uint16_t )row * DICEROLL_WORD_ROW_HEIGHT - 1U,
+                           DICEROLL_DISPLAY_WIDTH );
 }
 
 static void draw_word_cells( const MnemonicState *state )
@@ -299,19 +304,19 @@ static void draw_status( const MnemonicState *state )
     }
 }
 
-static void fill_button(uint16_t x, uint16_t width, uint32_t color)
+static void fill_button( uint16_t x, uint16_t width, uint32_t color )
 {
-    BSP_LCD_SetTextColor(color);
-    BSP_LCD_FillRect(x, DICEROLL_BUTTON_TOP, width, DICEROLL_BUTTON_HEIGHT);
+    BSP_LCD_SetTextColor( color );
+    BSP_LCD_FillRect( x, DICEROLL_BUTTON_TOP, width, DICEROLL_BUTTON_HEIGHT );
 }
 
-static uint32_t button_color(DicerollButton button, int phrase_complete)
+static uint32_t button_color( DicerollButton button, int phrase_complete )
 {
-    if (phrase_complete && button != DICEROLL_BUTTON_RESTART) {
+    if( phrase_complete && button != DICEROLL_BUTTON_RESTART )
         return LCD_COLOR_GRAY;
-    }
 
-    switch (button) {
+    switch( button )
+    {
     case DICEROLL_BUTTON_RESTART:
         return LCD_COLOR_DARKRED;
     case DICEROLL_BUTTON_BACK:
@@ -325,9 +330,10 @@ static uint32_t button_color(DicerollButton button, int phrase_complete)
     }
 }
 
-static void button_bounds(DicerollButton button, uint16_t *x, uint16_t *width)
+static void button_bounds( DicerollButton button, uint16_t *x, uint16_t *width )
 {
-    switch (button) {
+    switch( button )
+    {
     case DICEROLL_BUTTON_RESTART:
         *x = 0;
         *width = DICEROLL_RESTART_WIDTH;
@@ -398,91 +404,85 @@ static void draw_buttons( int phrase_complete )
     display_text( 657, 406, "1" );
 }
 
-void ui_draw(const MnemonicState *state)
+void ui_draw( const MnemonicState *state )
 {
     selected_word = 0U;
-    BSP_LCD_Clear(LCD_COLOR_BLACK);
-    draw_title();
-    draw_grid_lines();
-    draw_word_cells(state);
-    draw_status(state);
-    draw_buttons(mnemonic_state_entropy_complete(state));
+    BSP_LCD_Clear( LCD_COLOR_BLACK );
+    draw_title( );
+    draw_grid_lines( );
+    draw_word_cells( state );
+    draw_status( state );
+    draw_buttons( mnemonic_state_entropy_complete( state ) );
 }
 
-void ui_update(const MnemonicState *state)
+void ui_update( const MnemonicState *state )
 {
     selected_word = 0U;
-    draw_word_cells(state);
-    draw_status(state);
-    draw_buttons(mnemonic_state_entropy_complete(state));
+    draw_word_cells( state );
+    draw_status( state );
+    draw_buttons( mnemonic_state_entropy_complete( state ) );
 }
 
-void ui_draw_error(const char *message)
+void ui_draw_error( const char *message )
 {
-    BSP_LCD_Clear(LCD_COLOR_BLACK);
-    BSP_LCD_SetFont(&Font24);
-    BSP_LCD_SetTextColor(LCD_COLOR_RED);
-    BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
-    display_text_centered(190, "HARDWARE ERROR");
-    BSP_LCD_SetFont(&Font20);
-    BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-    display_text_centered(240, message);
-    display_text_centered(275, "CHECK POWER AND RESTART");
+    BSP_LCD_Clear( LCD_COLOR_BLACK );
+    BSP_LCD_SetFont( &Font24 );
+    BSP_LCD_SetTextColor( LCD_COLOR_RED );
+    BSP_LCD_SetBackColor( LCD_COLOR_BLACK );
+    display_text_centered( 190, "HARDWARE ERROR" );
+    BSP_LCD_SetFont( &Font20 );
+    BSP_LCD_SetTextColor( LCD_COLOR_WHITE );
+    display_text_centered( 240, message );
+    display_text_centered( 275, "CHECK POWER AND RESTART" );
 }
 
-DicerollButton ui_hit_test(uint16_t x, uint16_t y)
+DicerollButton ui_hit_test( uint16_t x, uint16_t y )
 {
     return diceroll_layout_button_at( x, y );
 }
 
-int ui_select_word_at(const MnemonicState *state,
-                               uint16_t x, uint16_t y)
+int ui_select_word_at( const MnemonicState *state, uint16_t x, uint16_t y )
 {
     uint8_t column;
     uint8_t row;
     uint8_t word_number;
     uint8_t completed;
 
-    if (state == NULL || x >= DICEROLL_DISPLAY_WIDTH ||
-        y < DICEROLL_WORD_GRID_TOP ||
-        y >= DICEROLL_WORD_GRID_TOP + DICEROLL_WORD_GRID_HEIGHT) {
+    if( state == NULL || x >= DICEROLL_DISPLAY_WIDTH ||
+            y < DICEROLL_WORD_GRID_TOP ||
+            y >= DICEROLL_WORD_GRID_TOP + DICEROLL_WORD_GRID_HEIGHT )
+    {
         return 0;
     }
 
-    column = (uint8_t)(x / DICEROLL_WORD_COLUMN_WIDTH);
-    row = (uint8_t)((y - DICEROLL_WORD_GRID_TOP) /
-                    DICEROLL_WORD_ROW_HEIGHT);
-    word_number = (uint8_t)(column * 6U + row + 1U);
-    completed = mnemonic_state_get_completed_word_count(state);
-    if (mnemonic_state_entropy_complete(state)) {
+    column = ( uint8_t )( x / DICEROLL_WORD_COLUMN_WIDTH );
+    row = ( uint8_t )( ( y - DICEROLL_WORD_GRID_TOP ) /
+                       DICEROLL_WORD_ROW_HEIGHT );
+    word_number = ( uint8_t )( column * 6U + row + 1U );
+    completed = mnemonic_state_get_completed_word_count( state );
+    if( mnemonic_state_entropy_complete( state ) )
         completed = MNEMONIC_WORD_COUNT;
-    }
-    if (word_number > completed) {
+    if( word_number > completed )
         return 0;
-    }
 
     selected_word = word_number;
-    draw_word_cells(state);
-    draw_status(state);
+    draw_word_cells( state );
+    draw_status( state );
     return 1;
 }
 
-void ui_show_hold_progress(DicerollButton button,
-                                    uint32_t elapsed_ms,
-                                    uint32_t required_ms)
+void ui_show_hold_progress( DicerollButton button, uint32_t elapsed_ms, uint32_t required_ms )
 {
     uint16_t x;
     uint16_t width;
     uint16_t progress;
 
-    button_bounds(button, &x, &width);
-    if (width == 0U || required_ms == 0U) {
+    button_bounds( button, &x, &width );
+    if( width == 0U || required_ms == 0U )
         return;
-    }
-    if (elapsed_ms > required_ms) {
+    if( elapsed_ms > required_ms )
         elapsed_ms = required_ms;
-    }
-    progress = (uint16_t)(((uint32_t)(width - 1U) * elapsed_ms) / required_ms);
+    progress = ( uint16_t )( ( ( uint32_t )( width - 1U ) * elapsed_ms ) / required_ms );
 
     BSP_LCD_SetTextColor( button_color( button, 0 ) );
     BSP_LCD_FillRect( x + 1U, DICEROLL_BUTTON_TOP, width - 1U, 10U );
@@ -494,16 +494,14 @@ void ui_show_hold_progress(DicerollButton button,
     }
 }
 
-void ui_clear_hold_progress(DicerollButton button,
-                                     int phrase_complete)
+void ui_clear_hold_progress( DicerollButton button, int phrase_complete )
 {
     uint16_t x;
     uint16_t width;
 
-    button_bounds(button, &x, &width);
-    if (width == 0U) {
+    button_bounds( button, &x, &width );
+    if( width == 0U )
         return;
-    }
-    BSP_LCD_SetTextColor(button_color(button, phrase_complete));
-    BSP_LCD_FillRect(x + 1U, DICEROLL_BUTTON_TOP, width - 1U, 10U);
+    BSP_LCD_SetTextColor( button_color( button, phrase_complete ) );
+    BSP_LCD_FillRect( x + 1U, DICEROLL_BUTTON_TOP, width - 1U, 10U );
 }

@@ -81,42 +81,31 @@ static void draw_character( DicerollCanvas *canvas, const sFONT *font, uint16_t 
     }
 }
 
-static void draw_combining_mark( DicerollCanvas *canvas, const sFONT *font,
-                                uint16_t x, uint16_t y, uint32_t codepoint,
-                                uint16_t color )
+static void draw_combining_mark( DicerollCanvas *canvas, const sFONT *font, uint16_t x, uint16_t y, uint32_t codepoint, uint16_t color )
 {
     uint16_t center = ( uint16_t )( x + font->Width / 2U );
 
     if( codepoint == 0x0301U )
     {
-        graphics_fill_rect( canvas, ( uint16_t )( center + 1U ),
-                                    ( uint16_t )( y + 1U ),
-                                    2U, 2U, color );
-        graphics_fill_rect( canvas, center, ( uint16_t )( y + 2U ),
-                                    2U, 2U, color );
+        graphics_fill_rect( canvas, ( uint16_t )( center + 1U ), ( uint16_t )( y + 1U ), 2U, 2U, color );
+        graphics_fill_rect( canvas, center, ( uint16_t )( y + 2U ), 2U, 2U, color );
     }
     else if( codepoint == 0x0300U )
     {
-        graphics_fill_rect( canvas, ( uint16_t )( center - 2U ), y,
-                                    2U, 2U, color );
-        graphics_fill_rect( canvas, center, ( uint16_t )( y + 2U ),
-                                    2U, 2U, color );
+        graphics_fill_rect( canvas, ( uint16_t )( center - 2U ), y, 2U, 2U, color );
+        graphics_fill_rect( canvas, center, ( uint16_t )( y + 2U ), 2U, 2U, color );
     }
     else if( codepoint == 0x0303U )
     {
-        graphics_fill_rect( canvas, ( uint16_t )( center - 2U ),
-                                    ( uint16_t )( y + 1U ), 2U, 1U, color );
-        graphics_fill_rect( canvas, ( uint16_t )( center ),
-                                    ( uint16_t )( y + 2U ), 2U, 1U, color );
-        graphics_fill_rect( canvas, ( uint16_t )( center + 2U ),
-                                    ( uint16_t )( y + 1U ), 2U, 1U, color );
+        graphics_fill_rect( canvas, ( uint16_t )( center - 2U ), ( uint16_t )( y + 1U ), 2U, 1U, color );
+        graphics_fill_rect( canvas, ( uint16_t )( center ), ( uint16_t )( y + 2U ), 2U, 1U, color );
+        graphics_fill_rect( canvas, ( uint16_t )( center + 2U ), ( uint16_t )( y + 1U ), 2U, 1U, color );
     }
 }
 
 static int is_combining_mark( uint32_t codepoint )
 {
-    return codepoint == 0x0300U || codepoint == 0x0301U ||
-           codepoint == 0x0303U;
+    return codepoint == 0x0300U || codepoint == 0x0301U || codepoint == 0x0303U;
 }
 
 static size_t utf8_glyph_count( const char *text )
@@ -136,10 +125,7 @@ static size_t utf8_glyph_count( const char *text )
     return count;
 }
 
-static uint16_t draw_utf8_text( DicerollCanvas *canvas, const sFONT *font,
-                               uint16_t x, uint16_t y, const char *text,
-                               uint8_t scale, uint16_t foreground,
-                               uint16_t background )
+static uint16_t draw_utf8_text( DicerollCanvas *canvas, const sFONT *font, uint16_t x, uint16_t y, const char *text, uint8_t scale, uint16_t foreground, uint16_t background )
 {
     const char *cursor = text;
     uint32_t codepoint;
@@ -151,17 +137,13 @@ static uint16_t draw_utf8_text( DicerollCanvas *canvas, const sFONT *font,
         if( is_combining_mark( codepoint ) )
         {
             if( last_width != 0U )
-                draw_combining_mark( canvas, font, last_x, y, codepoint,
-                                    foreground );
+                draw_combining_mark( canvas, font, last_x, y, codepoint, foreground );
             continue;
         }
 
         last_x = x;
         last_width = ( uint8_t )( font->Width * scale );
-        draw_character( canvas, font, x, y,
-                       codepoint >= ' ' && codepoint <= '~'
-                       ? ( char )codepoint : '?', scale, foreground,
-                       background );
+        draw_character( canvas, font, x, y, codepoint >= ' ' && codepoint <= '~' ? ( char )codepoint : '?', scale, foreground, background );
         x = ( uint16_t )( x + last_width );
     }
     return x;
@@ -175,24 +157,19 @@ void graphics_text( DicerollCanvas *canvas, uint16_t x, uint16_t y, const char *
     draw_utf8_text( canvas, &Font16, x, y, text, scale, foreground, background );
 }
 
-void graphics_text_default( DicerollCanvas *canvas, uint16_t x,
-                                    uint16_t y, const char *text,
-                                    uint16_t foreground, uint16_t background )
+void graphics_text_default( DicerollCanvas *canvas, uint16_t x, uint16_t y, const char *text, uint16_t foreground, uint16_t background )
 {
     if( text == NULL )
         return;
     draw_utf8_text( canvas, &Font16Default, x, y, text, 1, foreground, background );
 }
 
-void graphics_text12( DicerollCanvas *canvas, uint16_t x,
-                              uint16_t y, const char *text,
-                              uint16_t foreground, uint16_t background )
+void graphics_text12( DicerollCanvas *canvas, uint16_t x, uint16_t y, const char *text, uint16_t foreground, uint16_t background )
 {
     if( text == NULL )
         return;
     draw_utf8_text( canvas, &Font12, x, y, text, 1, foreground, background );
 }
-
 
 void graphics_text20( DicerollCanvas *canvas, uint16_t x, uint16_t y, const char *text, uint16_t foreground, uint16_t background )
 {
