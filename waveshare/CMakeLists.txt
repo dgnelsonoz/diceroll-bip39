@@ -59,8 +59,8 @@ add_library(bip39_fonts STATIC
 target_include_directories(bip39_fonts PUBLIC vendor/waveshare/fonts)
 
 add_library(bip39_graphics STATIC
-    src/ui/diceroll_graphics.c
-    src/ui/diceroll_ui.c
+    src/ui/graphics.c
+    src/ui/ui.c
     ../common/utf8.c)
 target_include_directories(bip39_graphics PUBLIC include ../common)
 target_link_libraries(bip39_graphics PUBLIC bip39_fonts)
@@ -82,7 +82,7 @@ function(add_bip39_variant language target_name)
 
     add_executable(${target_name}
         src/main.c
-        src/app/diceroll_app.c
+        src/app/app.c
         src/platform/rp2350/clock.c
         src/platform/waveshare/platform.c)
     target_include_directories(${target_name} PRIVATE include)

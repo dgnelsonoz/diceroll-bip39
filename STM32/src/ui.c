@@ -1,4 +1,4 @@
-#include "diceroll_ui.h"
+#include "ui.h"
 
 #include "bip39_lookup.h"
 #include "fonts.h"
@@ -398,7 +398,7 @@ static void draw_buttons( int phrase_complete )
     display_text( 657, 406, "1" );
 }
 
-void diceroll_ui_draw(const MnemonicState *state)
+void ui_draw(const MnemonicState *state)
 {
     selected_word = 0U;
     BSP_LCD_Clear(LCD_COLOR_BLACK);
@@ -409,7 +409,7 @@ void diceroll_ui_draw(const MnemonicState *state)
     draw_buttons(mnemonic_state_entropy_complete(state));
 }
 
-void diceroll_ui_update(const MnemonicState *state)
+void ui_update(const MnemonicState *state)
 {
     selected_word = 0U;
     draw_word_cells(state);
@@ -417,7 +417,7 @@ void diceroll_ui_update(const MnemonicState *state)
     draw_buttons(mnemonic_state_entropy_complete(state));
 }
 
-void diceroll_ui_draw_error(const char *message)
+void ui_draw_error(const char *message)
 {
     BSP_LCD_Clear(LCD_COLOR_BLACK);
     BSP_LCD_SetFont(&Font24);
@@ -430,12 +430,12 @@ void diceroll_ui_draw_error(const char *message)
     display_text_centered(275, "CHECK POWER AND RESTART");
 }
 
-DicerollButton diceroll_ui_hit_test(uint16_t x, uint16_t y)
+DicerollButton ui_hit_test(uint16_t x, uint16_t y)
 {
     return diceroll_layout_button_at( x, y );
 }
 
-int diceroll_ui_select_word_at(const MnemonicState *state,
+int ui_select_word_at(const MnemonicState *state,
                                uint16_t x, uint16_t y)
 {
     uint8_t column;
@@ -467,7 +467,7 @@ int diceroll_ui_select_word_at(const MnemonicState *state,
     return 1;
 }
 
-void diceroll_ui_show_hold_progress(DicerollButton button,
+void ui_show_hold_progress(DicerollButton button,
                                     uint32_t elapsed_ms,
                                     uint32_t required_ms)
 {
@@ -494,7 +494,7 @@ void diceroll_ui_show_hold_progress(DicerollButton button,
     }
 }
 
-void diceroll_ui_clear_hold_progress(DicerollButton button,
+void ui_clear_hold_progress(DicerollButton button,
                                      int phrase_complete)
 {
     uint16_t x;

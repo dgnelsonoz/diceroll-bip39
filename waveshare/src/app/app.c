@@ -1,6 +1,6 @@
-#include "diceroll_graphics.h"
-#include "diceroll_app.h"
-#include "diceroll_ui.h"
+#include "graphics.h"
+#include "app.h"
+#include "ui.h"
 #include "bip39_lookup.h"
 #include "layout.h"
 #include "mnemonic_state.h"
@@ -61,7 +61,7 @@ static void draw_word_cell( DicerollCanvas *canvas, const MnemonicState *state,
                    : mnemonic_state_get_final_word_index( state, &index ) == 0;
 
     diceroll_layout_word_cell( word, &x, &y );
-    diceroll_graphics_fill_rect( canvas, ( uint16_t )( x + 1U ), y,
+    graphics_fill_rect( canvas, ( uint16_t )( x + 1U ), y,
                                 DICEROLL_WORD_COLUMN_WIDTH - 1U,
                                 DICEROLL_WORD_ROW_HEIGHT - 1U, BLACK );
     if( has_word )
@@ -89,13 +89,13 @@ static void draw_word_cell( DicerollCanvas *canvas, const MnemonicState *state,
                  word <= 6U ? " " : word < 10U ? "  " : " " );
     else
         snprintf( label, sizeof( label ), "%u", word );
-    diceroll_graphics_text( canvas, ( uint16_t )( x + 10U ),
+    graphics_text( canvas, ( uint16_t )( x + 10U ),
                            ( uint16_t )( y + 10U ), label, 1,
                            word == current_word &&
                            !mnemonic_state_entropy_complete( state )
                            ? CYAN : WHITE, BLACK );
     if( has_word )
-        diceroll_graphics_text( canvas,
+        graphics_text( canvas,
                                ( uint16_t )( x + 190U - strlen( list_number ) * 11U ),
                                ( uint16_t )( y + 10U ), list_number, 1,
                                word == current_word &&
@@ -103,7 +103,7 @@ static void draw_word_cell( DicerollCanvas *canvas, const MnemonicState *state,
                                ? CYAN : WHITE, BLACK );
     if( word == selected_word )
     {
-        diceroll_graphics_draw_rect( canvas, ( uint16_t )( x + 2U ), ( uint16_t )( y + 2U ), 196, 32,
+        graphics_draw_rect( canvas, ( uint16_t )( x + 2U ), ( uint16_t )( y + 2U ), 196, 32,
                                     0xffe0U );
     }
 }
@@ -127,10 +127,10 @@ static void draw_status( DicerollCanvas *canvas, const MnemonicState *state )
         entered = required;
     }
 
-    diceroll_graphics_fill_rect( canvas, 0, 248, 800, 80, BLACK );
+    graphics_fill_rect( canvas, 0, 248, 800, 80, BLACK );
     if( mnemonic_state_entropy_complete( state ) )
     {
-        diceroll_graphics_text_centered( canvas, 260,
+        graphics_text_centered( canvas, 260,
                                         "PHRASE COMPLETE - 24 WORDS", 1, GREEN, BLACK );
     }
     else
@@ -145,23 +145,23 @@ static void draw_status( DicerollCanvas *canvas, const MnemonicState *state )
         }
         else
             diceroll_format_partial_bits( state, bits, required );
-        diceroll_graphics_text20( canvas, 10, 258, "WORD", WHITE, BLACK );
+        graphics_text20( canvas, 10, 258, "WORD", WHITE, BLACK );
         snprintf( number, sizeof( number ), "%u", current_word );
-        diceroll_graphics_text20( canvas,
+        graphics_text20( canvas,
                                  ( uint16_t )( 116U - strlen( number ) * 14U ),
                                  258, number, WHITE, BLACK );
-        diceroll_graphics_text20( canvas, 116, 258, "/", WHITE, BLACK );
-        diceroll_graphics_text20( canvas, 130, 258, "24", WHITE, BLACK );
-        diceroll_graphics_text20( canvas, 200, 258, "FLIP", WHITE, BLACK );
+        graphics_text20( canvas, 116, 258, "/", WHITE, BLACK );
+        graphics_text20( canvas, 130, 258, "24", WHITE, BLACK );
+        graphics_text20( canvas, 200, 258, "FLIP", WHITE, BLACK );
         snprintf( number, sizeof( number ), "%u", entered );
-        diceroll_graphics_text20( canvas,
+        graphics_text20( canvas,
                                  ( uint16_t )( 306U - strlen( number ) * 14U ),
                                  258, number, WHITE, BLACK );
-        diceroll_graphics_text20( canvas, 306, 258, "/", WHITE, BLACK );
+        graphics_text20( canvas, 306, 258, "/", WHITE, BLACK );
         snprintf( number, sizeof( number ), "%u", required );
-        diceroll_graphics_text20( canvas, 320, 258, number, WHITE, BLACK );
-        diceroll_graphics_text20( canvas, 470, 258, "BITS", WHITE, BLACK );
-        diceroll_graphics_text20( canvas, 540, 258, bits, WHITE, BLACK );
+        graphics_text20( canvas, 320, 258, number, WHITE, BLACK );
+        graphics_text20( canvas, 470, 258, "BITS", WHITE, BLACK );
+        graphics_text20( canvas, 540, 258, bits, WHITE, BLACK );
     }
 
     if( mnemonic_state_entropy_complete( state ) )
@@ -185,7 +185,7 @@ static void draw_status( DicerollCanvas *canvas, const MnemonicState *state )
                      detail_word, verification_bits, detail_index,
                      detail_index + 1U,
                      bip39_get_word_by_index( detail_index ) );
-            diceroll_graphics_text( canvas, 20, 296, verification, 1,
+            graphics_text( canvas, 20, 296, verification, 1,
                                    LIGHT_GREY, BLACK );
         }
     }
@@ -226,7 +226,7 @@ static void update_state_regions( const MnemonicState *state,
                                                &previous_index ) == 0 )
             {
                 diceroll_format_index_bits( previous_index, previous_bits, false );
-                diceroll_graphics_text20( &canvas, 540, 258, previous_bits,
+                graphics_text20( &canvas, 540, 258, previous_bits,
                                          WHITE, BLACK );
             }
         }
@@ -254,15 +254,15 @@ static void update_state_regions( const MnemonicState *state,
                                            &previous_index ) == 0 )
         {
             diceroll_format_index_bits( previous_index, previous_bits, false );
-            diceroll_graphics_text20( &canvas, 540, 258, previous_bits,
+            graphics_text20( &canvas, 540, 258, previous_bits,
                                      WHITE, BLACK );
         }
         return;
     }
 
     snprintf( number, sizeof( number ), "%u", entered );
-    diceroll_graphics_fill_rect( &canvas, 260, 258, 46, 24, BLACK );
-    diceroll_graphics_text20( &canvas,
+    graphics_fill_rect( &canvas, 260, 258, 46, 24, BLACK );
+    graphics_text20( &canvas,
                              ( uint16_t )( 306U - strlen( number ) * 14U ),
                              258, number, WHITE, BLACK );
 
@@ -276,20 +276,20 @@ static void update_state_regions( const MnemonicState *state,
             char partial_bits[ MNEMONIC_WORD_BITS + 1U ];
             uint8_t required = current_word == MNEMONIC_WORD_COUNT ? 3U : 11U;
 
-            diceroll_graphics_fill_rect( &canvas, 540, 258, 200, 24, BLACK );
+            graphics_fill_rect( &canvas, 540, 258, 200, 24, BLACK );
             diceroll_format_partial_bits( state, partial_bits, required );
-            diceroll_graphics_text20( &canvas, 540, 258, partial_bits,
+            graphics_text20( &canvas, 540, 258, partial_bits,
                                      WHITE, BLACK );
         }
         else
         {
-            diceroll_graphics_text20( &canvas, ( uint16_t )( 540U + previous_entered * 14U ),
+            graphics_text20( &canvas, ( uint16_t )( 540U + previous_entered * 14U ),
                                      258, bit, WHITE, BLACK );
         }
     }
     else if( entered < previous_entered )
     {
-        diceroll_graphics_text20( &canvas, ( uint16_t )( 540U + entered * 14U ),
+        graphics_text20( &canvas, ( uint16_t )( 540U + entered * 14U ),
                                  258, bit, WHITE, BLACK );
     }
 }
@@ -311,20 +311,20 @@ static void draw_diceroll_screen( uint16_t *pixels, const MnemonicState *state )
 {
     DicerollCanvas canvas = { pixels, LCD_WIDTH, LCD_HEIGHT };
 
-    diceroll_graphics_clear( &canvas, BLACK );
-    diceroll_graphics_text24_centered( &canvas, 3, "DICE ROLL TO BIP-39",
+    graphics_clear( &canvas, BLACK );
+    graphics_text24_centered( &canvas, 3, "DICE ROLL TO BIP-39",
                                       WHITE, BLACK );
-    diceroll_graphics_fill_rect( &canvas, 0, DICEROLL_TITLE_HEIGHT - 1U,
+    graphics_fill_rect( &canvas, 0, DICEROLL_TITLE_HEIGHT - 1U,
                                 DICEROLL_DISPLAY_WIDTH, 1, WHITE );
 
     for( uint16_t column = 1; column < 4; ++column )
-        diceroll_graphics_fill_rect( &canvas,
+        graphics_fill_rect( &canvas,
                                     column * DICEROLL_WORD_COLUMN_WIDTH,
                                     DICEROLL_WORD_GRID_TOP, 1,
                                     DICEROLL_WORD_GRID_HEIGHT, WHITE );
     for( uint16_t row = 1; row <= 6; ++row )
     {
-        diceroll_graphics_fill_rect( &canvas, 0,
+        graphics_fill_rect( &canvas, 0,
                                     ( uint16_t )( DICEROLL_WORD_GRID_TOP +
                                                   row * DICEROLL_WORD_ROW_HEIGHT - 1U ),
                                     DICEROLL_DISPLAY_WIDTH, 1, WHITE );
@@ -334,53 +334,53 @@ static void draw_diceroll_screen( uint16_t *pixels, const MnemonicState *state )
 
     draw_status( &canvas, state );
 
-    diceroll_graphics_fill_rect( &canvas, 0, DICEROLL_BUTTON_TOP,
+    graphics_fill_rect( &canvas, 0, DICEROLL_BUTTON_TOP,
                                 DICEROLL_RESTART_WIDTH,
                                 DICEROLL_BUTTON_HEIGHT,
                                 DARK_RED );
-    diceroll_graphics_fill_rect( &canvas, DICEROLL_RESTART_WIDTH,
+    graphics_fill_rect( &canvas, DICEROLL_RESTART_WIDTH,
                                 DICEROLL_BUTTON_TOP, DICEROLL_BACK_WIDTH,
                                 DICEROLL_BUTTON_HEIGHT,
                                 ORANGE );
-    diceroll_graphics_fill_rect( &canvas,
+    graphics_fill_rect( &canvas,
                                 DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH,
                                 DICEROLL_BUTTON_TOP, DICEROLL_BIT_BUTTON_WIDTH,
                                 DICEROLL_BUTTON_HEIGHT,
                                 LIGHT_GREY );
-    diceroll_graphics_fill_rect( &canvas,
+    graphics_fill_rect( &canvas,
                                 DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH +
                                 DICEROLL_BIT_BUTTON_WIDTH,
                                 DICEROLL_BUTTON_TOP, DICEROLL_BIT_BUTTON_WIDTH,
                                 DICEROLL_BUTTON_HEIGHT,
                                 DARK_GREY );
-    diceroll_graphics_fill_rect( &canvas, DICEROLL_RESTART_WIDTH,
+    graphics_fill_rect( &canvas, DICEROLL_RESTART_WIDTH,
                                 DICEROLL_BUTTON_TOP, 1,
                                 DICEROLL_BUTTON_HEIGHT, BLACK );
-    diceroll_graphics_fill_rect( &canvas,
+    graphics_fill_rect( &canvas,
                                 DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH,
                                 DICEROLL_BUTTON_TOP, 1,
                                 DICEROLL_BUTTON_HEIGHT, BLACK );
-    diceroll_graphics_fill_rect( &canvas,
+    graphics_fill_rect( &canvas,
                                 DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH +
                                 DICEROLL_BIT_BUTTON_WIDTH,
                                 DICEROLL_BUTTON_TOP, 1,
                                 DICEROLL_BUTTON_HEIGHT, BLACK );
 
-    diceroll_graphics_text12( &canvas, 51, 350, "HOLD", WHITE,
+    graphics_text12( &canvas, 51, 350, "HOLD", WHITE,
                            DARK_RED );
-    diceroll_graphics_text_default( &canvas, 26, 390, "RESTART", WHITE,
+    graphics_text_default( &canvas, 26, 390, "RESTART", WHITE,
                            DARK_RED );
-    diceroll_graphics_text12( &canvas, 181, 350, "HOLD", BLACK,
+    graphics_text12( &canvas, 181, 350, "HOLD", BLACK,
                            ORANGE );
-    diceroll_graphics_text_default( &canvas, 168, 390, "BACK", BLACK,
+    graphics_text_default( &canvas, 168, 390, "BACK", BLACK,
                            ORANGE );
-    diceroll_graphics_text24( &canvas, 352, 354, "HEADS", BLACK,
+    graphics_text24( &canvas, 352, 354, "HEADS", BLACK,
                              LIGHT_GREY );
-    diceroll_graphics_text24( &canvas, 387, 406, "0", BLACK,
+    graphics_text24( &canvas, 387, 406, "0", BLACK,
                              LIGHT_GREY );
-    diceroll_graphics_text24( &canvas, 622, 354, "TAILS", WHITE,
+    graphics_text24( &canvas, 622, 354, "TAILS", WHITE,
                              DARK_GREY );
-    diceroll_graphics_text24( &canvas, 657, 406, "1", WHITE,
+    graphics_text24( &canvas, 657, 406, "1", WHITE,
                              DARK_GREY );
 
 }
@@ -392,7 +392,7 @@ static void present( const MnemonicState *state )
     draw_diceroll_screen( framebuffer, state );
 }
 
-void diceroll_app_run( void )
+void app_run( void )
 {
     MnemonicState state;
     bool touch_down = false;
@@ -502,12 +502,12 @@ void diceroll_app_run( void )
                       touch_x >= DICEROLL_RESTART_WIDTH +
                                  DICEROLL_BACK_WIDTH ) ) ) )
             {
-                diceroll_ui_clear_hold_progress( framebuffer, held_button );
+                ui_clear_hold_progress( framebuffer, held_button );
                 action_done = true;
                 continue;
 
             }
-            hold_progress = diceroll_ui_show_hold_progress(
+            hold_progress = ui_show_hold_progress(
                                 framebuffer, held_button, held_us, hold_progress );
             if( held_button == DICEROLL_BUTTON_RESTART &&
                 held_us >= 1000000 )
@@ -524,7 +524,7 @@ void diceroll_app_run( void )
                 uint8_t previous_entered = mnemonic_state_get_current_word_bit_count( &state );
                 mnemonic_state_backspace( &state );
                 action_done = true;
-                diceroll_ui_clear_hold_progress( framebuffer, held_button );
+                ui_clear_hold_progress( framebuffer, held_button );
                 update_state_regions( &state, previous_word, previous_entered );
             }
         }
@@ -535,7 +535,7 @@ void diceroll_app_run( void )
 
             if( release_samples >= TOUCH_RELEASE_SAMPLES )
             {
-                diceroll_ui_clear_hold_progress( framebuffer, held_button );
+                ui_clear_hold_progress( framebuffer, held_button );
                 touch_down = false;
                 action_done = false;
                 held_button = DICEROLL_BUTTON_NONE;

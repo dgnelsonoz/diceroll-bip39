@@ -2,7 +2,7 @@
 #include "stm32469i_discovery.h"
 #include "stm32469i_discovery_lcd.h"
 #include "mnemonic_state.h"
-#include "diceroll_ui.h"
+#include "ui.h"
 #include "stm32469i_discovery_ts.h"
 
 enum {
@@ -42,11 +42,11 @@ int main( void )
     BSP_LCD_SelectLayer( 0 );
     if( BSP_TS_Init( 800, 480 ) != TS_OK )
     {
-        diceroll_ui_draw_error( "TOUCHSCREEN NOT DETECTED" );
+        ui_draw_error( "TOUCHSCREEN NOT DETECTED" );
         FatalError();
     }
     mnemonic_state_init( &mnemonic );
-    diceroll_ui_draw( &mnemonic );
+    ui_draw( &mnemonic );
 
     while( 1 )
     {
@@ -55,7 +55,7 @@ int main( void )
         BSP_TS_GetState( &ts_state );
         if( ts_state.touchDetected )
         {
-            DicerollButton button = diceroll_ui_hit_test(
+            DicerollButton button = ui_hit_test(
                 ts_state.touchX[0], ts_state.touchY[0] );
             int phrase_complete = mnemonic_state_entropy_complete( &mnemonic );
 
@@ -66,7 +66,7 @@ int main( void )
                 {
                     mnemonic_state_init( &mnemonic );
                     BSP_LED_Off( LED4 );
-                    diceroll_ui_update( &mnemonic );
+                    ui_update( &mnemonic );
                     WaitForTouchRelease();
                 }
             }
@@ -79,7 +79,7 @@ int main( void )
                 {
                     mnemonic_state_backspace( &mnemonic );
                     BSP_LED_Off( LED4 );
-                    diceroll_ui_update( &mnemonic );
+                    ui_update( &mnemonic );
                     WaitForTouchRelease();
                 }
             }
@@ -91,7 +91,7 @@ int main( void )
 
                 if( mnemonic_state_add_flip( &mnemonic, bit ) == 0 )
                 {
-                    diceroll_ui_update( &mnemonic );
+                    ui_update( &mnemonic );
                     if( mnemonic_state_entropy_complete( &mnemonic ) )
                     {
                         SweepCompletionLeds();
@@ -100,7 +100,7 @@ int main( void )
                 WaitForTouchRelease();
             }
             else if( button == DICEROLL_BUTTON_NONE &&
-                     diceroll_ui_select_word_at( &mnemonic,
+                     ui_select_word_at( &mnemonic,
                                                  ts_state.touchX[0],
                                                  ts_state.touchY[0] ) )
             {
@@ -168,10 +168,10 @@ static int WaitForProtectedButton( DicerollButton button,
     {
         BSP_TS_GetState( &ts_state );
         if( !ts_state.touchDetected ||
-            diceroll_ui_hit_test( ts_state.touchX[0],
+            ui_hit_test( ts_state.touchX[0],
                                   ts_state.touchY[0] ) != button )
         {
-            diceroll_ui_clear_hold_progress( button, phrase_complete );
+            ui_clear_hold_progress( button, phrase_complete );
             if( ts_state.touchDetected )
             {
                 WaitForTouchRelease();
@@ -180,7 +180,7 @@ static int WaitForProtectedButton( DicerollButton button,
         }
 
         elapsed = HAL_GetTick() - started;
-        diceroll_ui_show_hold_progress( button, elapsed, required_ms );
+        ui_show_hold_progress( button, elapsed, required_ms );
         HAL_Delay( TOUCH_POLL_MS );
     }
 

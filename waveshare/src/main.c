@@ -1,7 +1,7 @@
-#include "diceroll_app.h"
+#include "app.h"
 
 int main( void )
 {
-    diceroll_app_run( );
+    app_run( );
     return 0;
 }
