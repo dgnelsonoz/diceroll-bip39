@@ -4,26 +4,17 @@
 #include "bip39_lookup.h"
 #include "layout.h"
 #include "mnemonic_state.h"
-#include "rp2350_clock.h"
 #include "ui_model.h"
 #include "utf8.h"
-
-#include "bsp_gt911.h"
-#include "bsp_i2c.h"
-#include "bsp_st7262.h"
-#include "pico/stdlib.h"
-#include "pio_rgb.h"
-#include "rp_pico_alloc.h"
+#include "waveshare_platform.h"
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 
 enum
 {
     LCD_WIDTH = DICEROLL_DISPLAY_WIDTH,
     LCD_HEIGHT = DICEROLL_DISPLAY_HEIGHT,
-    TRANSFER_PIXELS = DICEROLL_DISPLAY_WIDTH * 120U,
-    TEST_SYSTEM_CLOCK_MHZ = 260U,
     TOUCH_RELEASE_SAMPLES = 3U
 };
 
@@ -36,11 +27,8 @@ static const uint16_t ORANGE = 0xfd20U;
 static const uint16_t LIGHT_GREY = 0xc618U;
 static const uint16_t DARK_GREY = 0x4208U;
 
-static bsp_display_interface_t *display;
 static uint16_t *framebuffer;
 static uint8_t selected_word;
-static uint16_t transfer_buffer1[ TRANSFER_PIXELS ];
-static uint16_t transfer_buffer2[ TRANSFER_PIXELS ];
 
 typedef char wave_layout_width_must_match[
     LCD_WIDTH == DICEROLL_DISPLAY_WIDTH ? 1 : -1];
@@ -406,55 +394,24 @@ static void present( const MnemonicState *state )
 
 void diceroll_app_run( void )
 {
-    bsp_touch_interface_t *touch;
-    bsp_touch_data_t touch_data;
-    pio_rgb_info_t rgb =
-    {
-        .width = LCD_WIDTH, .height = LCD_HEIGHT,
-        .transfer_size = TRANSFER_PIXELS,
-        .pclk_freq = BSP_LCD_PCLK_FREQ,
-        .mode = { false, true, true },
-    };
-    bsp_display_info_t display_info =
-    {
-        .width = LCD_WIDTH, .height = LCD_HEIGHT,
-        .brightness = 100, .user_data = &rgb,
-    };
-    bsp_touch_info_t touch_info =
-    {
-        .width = LCD_WIDTH, .height = LCD_HEIGHT, .rotation = 0,
-    };
     MnemonicState state;
     bool touch_down = false;
     bool action_done = false;
     DicerollButton held_button = DICEROLL_BUTTON_NONE;
     uint8_t release_samples = 0;
     uint16_t hold_progress = 0;
-    absolute_time_t press_started = nil_time;
+    uint16_t touch_x = 0U;
+    uint16_t touch_y = 0U;
+    uint64_t press_started = 0U;
 
-    rp2350_set_system_clock( TEST_SYSTEM_CLOCK_MHZ );
     mnemonic_state_init( &state );
-    rgb.framebuffer1 = rp_mem_malloc( LCD_WIDTH * LCD_HEIGHT * sizeof( uint16_t ) );
-    rgb.framebuffer2 = NULL;
-    rgb.transfer_buffer1 = transfer_buffer1;
-    rgb.transfer_buffer2 = transfer_buffer2;
-    if( rgb.framebuffer1 == NULL )
-        panic( "display allocation failed" );
-    framebuffer = rgb.framebuffer1;
-    if( !bsp_display_new_st7262( &display, &display_info ) )
-        panic( "display creation failed" );
-    display->init();
+    framebuffer = waveshare_platform_display_init();
     present( &state );
-
-    bsp_i2c_init();
-    if( !bsp_touch_new_gt911( &touch, &touch_info ) )
-        panic( "touch creation failed" );
-    touch->init();
+    waveshare_platform_touch_init();
 
     while( true )
     {
-        touch->read();
-        bool pressed = touch->get_data( &touch_data ) && touch_data.points > 0U;
+        bool pressed = waveshare_platform_touch_read( &touch_x, &touch_y );
 
         if( pressed )
             release_samples = 0;
@@ -463,15 +420,13 @@ void diceroll_app_run( void )
         {
             touch_down = true;
             action_done = false;
-            press_started = get_absolute_time();
+            press_started = waveshare_platform_time_us();
             held_button = DICEROLL_BUTTON_NONE;
             hold_progress = 0;
 
-            if( touch_data.coords[ 0 ].y >= DICEROLL_BUTTON_TOP )
+            if( touch_y >= DICEROLL_BUTTON_TOP )
             {
-                uint16_t x = touch_data.coords[ 0 ].x;
-                held_button = diceroll_layout_button_at(
-                                  x, touch_data.coords[ 0 ].y );
+                held_button = diceroll_layout_button_at( touch_x, touch_y );
                 if( ( held_button == DICEROLL_BUTTON_RESTART &&
                       mnemonic_state_get_bit_count( &state ) == 0U ) ||
                     ( held_button == DICEROLL_BUTTON_BACK &&
@@ -484,12 +439,12 @@ void diceroll_app_run( void )
                     action_done = true;
                 }
             }
-            else if( touch_data.coords[ 0 ].y >= DICEROLL_WORD_GRID_TOP &&
-                     touch_data.coords[ 0 ].y < DICEROLL_STATUS_TOP )
+            else if( touch_y >= DICEROLL_WORD_GRID_TOP &&
+                     touch_y < DICEROLL_STATUS_TOP )
             {
-                uint8_t column = ( uint8_t )( touch_data.coords[ 0 ].x /
+                uint8_t column = ( uint8_t )( touch_x /
                                                DICEROLL_WORD_COLUMN_WIDTH );
-                uint8_t row = ( uint8_t )( ( touch_data.coords[ 0 ].y -
+                uint8_t row = ( uint8_t )( ( touch_y -
                                              DICEROLL_WORD_GRID_TOP ) /
                                            DICEROLL_WORD_ROW_HEIGHT );
                 uint8_t word = ( uint8_t )( column * 6U + row + 1U );
@@ -535,17 +490,17 @@ void diceroll_app_run( void )
         }
         else if( pressed && touch_down && !action_done )
         {
-            int64_t held_us = absolute_time_diff_us( press_started,
-                                                    get_absolute_time() );
+            int64_t held_us = ( int64_t )( waveshare_platform_time_us() -
+                                           press_started );
             if( ( held_button == DICEROLL_BUTTON_RESTART ||
                   held_button == DICEROLL_BUTTON_BACK ) &&
-                ( touch_data.coords[ 0 ].y < DICEROLL_BUTTON_TOP ||
+                ( touch_y < DICEROLL_BUTTON_TOP ||
                   ( held_button == DICEROLL_BUTTON_RESTART &&
-                    touch_data.coords[ 0 ].x >= DICEROLL_RESTART_WIDTH ) ||
+                    touch_x >= DICEROLL_RESTART_WIDTH ) ||
                   ( held_button == DICEROLL_BUTTON_BACK &&
-                    ( touch_data.coords[ 0 ].x < DICEROLL_RESTART_WIDTH ||
-                      touch_data.coords[ 0 ].x >= DICEROLL_RESTART_WIDTH +
-                                                   DICEROLL_BACK_WIDTH ) ) ) )
+                    ( touch_x < DICEROLL_RESTART_WIDTH ||
+                      touch_x >= DICEROLL_RESTART_WIDTH +
+                                 DICEROLL_BACK_WIDTH ) ) ) )
             {
                 diceroll_ui_clear_hold_progress( framebuffer, held_button );
                 action_done = true;
@@ -587,6 +542,6 @@ void diceroll_app_run( void )
                 hold_progress = 0;
             }
         }
-        sleep_ms( 5 );
+        waveshare_platform_sleep_ms( 5U );
     }
 }

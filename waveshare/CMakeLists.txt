@@ -83,7 +83,8 @@ function(add_bip39_variant language target_name)
     add_executable(${target_name}
         src/main.c
         src/app/diceroll_app.c
-        src/platform/rp2350/clock.c)
+        src/platform/rp2350/clock.c
+        src/platform/waveshare/platform.c)
     target_include_directories(${target_name} PRIVATE include)
     target_link_libraries(${target_name} PRIVATE
         bip39_core bip39_lookup_${language} bip39_graphics
