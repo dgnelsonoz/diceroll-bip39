@@ -23,6 +23,12 @@ void coinflip_graphics_text( CoinflipCanvas *canvas,
                             uint16_t x, uint16_t y, const char *text,
                             uint8_t scale, uint16_t foreground,
                             uint16_t background );
+void coinflip_graphics_text_default( CoinflipCanvas *canvas,
+                                    uint16_t x, uint16_t y, const char *text,
+                                    uint16_t foreground, uint16_t background );
+void coinflip_graphics_text12( CoinflipCanvas *canvas, uint16_t x, uint16_t y,
+                              const char *text, uint16_t foreground,
+                              uint16_t background );
 void coinflip_graphics_text20( CoinflipCanvas *canvas,
                               uint16_t x, uint16_t y, const char *text,
                               uint16_t foreground, uint16_t background );

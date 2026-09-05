@@ -4,6 +4,7 @@
 #include "bip39_lookup.h"
 #include "mnemonic_state.h"
 #include "rp2350_clock.h"
+#include "utf8.h"
 
 #include "bsp_gt911.h"
 #include "bsp_i2c.h"
@@ -72,10 +73,23 @@ static void format_index_bits( uint16_t index, char *bits, bool checksum_word )
     bits[ output ] = '\0';
 }
 
+static uint8_t utf8_character_count( const char *text )
+{
+    const char *cursor = text;
+    uint32_t codepoint;
+    uint8_t count = 0U;
+
+    while( coinflip_utf8_next( &cursor, &codepoint ) > 0 )
+        if( codepoint != 0x0300U && codepoint != 0x0301U && codepoint != 0x0303U )
+            ++count;
+    return count;
+}
+
 static void draw_word_cell( CoinflipCanvas *canvas, const MnemonicState *state,
                            uint8_t word )
 {
     char label[ 24 ];
+    char list_number[ 6 ];
     uint16_t index;
     uint16_t x = ( uint16_t )( ( ( word - 1U ) / 6U ) * 200U );
     uint16_t y = ( uint16_t )( 32U + ( ( word - 1U ) % 6U ) * 36U );
@@ -88,25 +102,41 @@ static void draw_word_cell( CoinflipCanvas *canvas, const MnemonicState *state,
                                 199, 35, BLACK );
     if( has_word )
     {
-        snprintf( label, sizeof( label ), "%02u %-8s %04u", word,
-                 bip39_get_word_by_index( index ), index + 1U );
+        const char *word_text = bip39_get_word_by_index( index );
+        uint8_t characters = utf8_character_count( word_text );
+        const char *separator = word <= 6U ? " " : word < 10U ? "  " : " ";
+        int offset = snprintf( label, sizeof( label ), "%u%s%s", word,
+                               separator, word_text );
+        while( characters++ < 8U && offset < ( int )sizeof( label ) - 1 )
+            label[ offset++ ] = ' ';
+        ( void )offset;
+        snprintf( list_number, sizeof( list_number ), "%u", index + 1U );
     }
     else if( word == current_word &&
              !mnemonic_state_entropy_complete( state ) )
     {
-        snprintf( label, sizeof( label ), "%02u [%s]", word,
+        snprintf( label, sizeof( label ), "%u%s[%s]", word,
+                 word <= 6U ? " " : word < 10U ? "  " : " ",
                  mnemonic_state_get_current_word_bit_count( state ) == 0U
                  ? "ready" : "in progress" );
     }
     else if( word == 24U )
-        snprintf( label, sizeof( label ), "%02u [CHECKSUM]", word );
+        snprintf( label, sizeof( label ), "%u%s[CHECKSUM]", word,
+                 word <= 6U ? " " : word < 10U ? "  " : " " );
     else
-        snprintf( label, sizeof( label ), "%02u", word );
+        snprintf( label, sizeof( label ), "%u", word );
     coinflip_graphics_text( canvas, ( uint16_t )( x + 10U ),
                            ( uint16_t )( y + 10U ), label, 1,
                            word == current_word &&
                            !mnemonic_state_entropy_complete( state )
                            ? CYAN : WHITE, BLACK );
+    if( has_word )
+        coinflip_graphics_text( canvas,
+                               ( uint16_t )( x + 190U - strlen( list_number ) * 11U ),
+                               ( uint16_t )( y + 10U ), list_number, 1,
+                               word == current_word &&
+                               !mnemonic_state_entropy_complete( state )
+                               ? CYAN : WHITE, BLACK );
     if( word == selected_word )
     {
         coinflip_graphics_draw_rect( canvas, ( uint16_t )( x + 2U ), ( uint16_t )( y + 2U ), 196, 32,
@@ -152,16 +182,20 @@ static void draw_status( CoinflipCanvas *canvas, const MnemonicState *state )
         else
             format_partial_bits( state, bits, required );
         coinflip_graphics_text20( canvas, 10, 258, "WORD", WHITE, BLACK );
-        snprintf( number, sizeof( number ), "%02u", current_word );
-        coinflip_graphics_text20( canvas, 80, 258, number, WHITE, BLACK );
+        snprintf( number, sizeof( number ), "%u", current_word );
+        coinflip_graphics_text20( canvas,
+                                 ( uint16_t )( 116U - strlen( number ) * 14U ),
+                                 258, number, WHITE, BLACK );
         coinflip_graphics_text20( canvas, 116, 258, "/", WHITE, BLACK );
-        coinflip_graphics_text20( canvas, 138, 258, "24", WHITE, BLACK );
+        coinflip_graphics_text20( canvas, 130, 258, "24", WHITE, BLACK );
         coinflip_graphics_text20( canvas, 200, 258, "FLIP", WHITE, BLACK );
-        snprintf( number, sizeof( number ), "%02u", entered );
-        coinflip_graphics_text20( canvas, 270, 258, number, WHITE, BLACK );
+        snprintf( number, sizeof( number ), "%u", entered );
+        coinflip_graphics_text20( canvas,
+                                 ( uint16_t )( 306U - strlen( number ) * 14U ),
+                                 258, number, WHITE, BLACK );
         coinflip_graphics_text20( canvas, 306, 258, "/", WHITE, BLACK );
-        snprintf( number, sizeof( number ), "%02u", required );
-        coinflip_graphics_text20( canvas, 328, 258, number, WHITE, BLACK );
+        snprintf( number, sizeof( number ), "%u", required );
+        coinflip_graphics_text20( canvas, 320, 258, number, WHITE, BLACK );
         coinflip_graphics_text20( canvas, 470, 258, "BITS", WHITE, BLACK );
         coinflip_graphics_text20( canvas, 540, 258, bits, WHITE, BLACK );
     }
@@ -183,7 +217,7 @@ static void draw_status( CoinflipCanvas *canvas, const MnemonicState *state )
             format_index_bits( detail_index, verification_bits,
                               detail_word == MNEMONIC_WORD_COUNT );
             snprintf( verification, sizeof( verification ),
-                     "WORD %02u: %s = INDEX %04u = LIST %04u = %s",
+                     "WORD %u: %s = INDEX %u = LIST %u = %s",
                      detail_word, verification_bits, detail_index,
                      detail_index + 1U,
                      bip39_get_word_by_index( detail_index ) );
@@ -262,8 +296,11 @@ static void update_state_regions( const MnemonicState *state,
         return;
     }
 
-    snprintf( number, sizeof( number ), "%02u", entered );
-    coinflip_graphics_text20( &canvas, 270, 258, number, WHITE, BLACK );
+    snprintf( number, sizeof( number ), "%u", entered );
+    coinflip_graphics_fill_rect( &canvas, 260, 258, 46, 24, BLACK );
+    coinflip_graphics_text20( &canvas,
+                             ( uint16_t )( 306U - strlen( number ) * 14U ),
+                             258, number, WHITE, BLACK );
 
     if( entered > previous_entered )
     {
@@ -339,13 +376,13 @@ static void draw_coinflip_screen( uint16_t *pixels, const MnemonicState *state )
     coinflip_graphics_fill_rect( &canvas, 260, 328, 1, 152, BLACK );
     coinflip_graphics_fill_rect( &canvas, 530, 328, 1, 152, BLACK );
 
-    coinflip_graphics_text( &canvas, 10, 350, "HOLD", 1, WHITE,
+    coinflip_graphics_text12( &canvas, 51, 350, "HOLD", WHITE,
                            DARK_RED );
-    coinflip_graphics_text( &canvas, 10, 390, "RESTART", 1, WHITE,
+    coinflip_graphics_text_default( &canvas, 26, 390, "RESTART", WHITE,
                            DARK_RED );
-    coinflip_graphics_text( &canvas, 168, 350, "HOLD", 1, BLACK,
+    coinflip_graphics_text12( &canvas, 181, 350, "HOLD", BLACK,
                            ORANGE );
-    coinflip_graphics_text( &canvas, 168, 390, "BACK", 1, BLACK,
+    coinflip_graphics_text_default( &canvas, 168, 390, "BACK", BLACK,
                            ORANGE );
     coinflip_graphics_text24( &canvas, 352, 354, "HEADS", BLACK,
                              LIGHT_GREY );
@@ -433,7 +470,8 @@ void coinflip_app_run( void )
                 uint16_t x = touch_data.coords[ 0 ].x;
                 held_button = x < 130U ? 1U : x < 260U ? 2U :
                               x < 530U ? 3U : 4U;
-                if( ( held_button == 2U && ( mnemonic_state_get_bit_count( &state ) == 0U ||
+                if( ( held_button == 1U && mnemonic_state_get_bit_count( &state ) == 0U ) ||
+                    ( held_button == 2U && ( mnemonic_state_get_bit_count( &state ) == 0U ||
                          mnemonic_state_entropy_complete( &state ) ) ) || ( held_button >= 3U &&
                          mnemonic_state_entropy_complete( &state ) ) )
                 {

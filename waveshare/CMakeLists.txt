@@ -50,7 +50,9 @@ target_link_libraries(waveshare_touch PUBLIC
     pico_stdlib hardware_i2c hardware_irq)
 
 add_library(bip39_fonts STATIC
-    vendor/waveshare/fonts/font16.c
+    vendor/waveshare/fonts/font12.c
+    vendor/waveshare/fonts/font16_unifont.c
+    vendor/waveshare/fonts/font16_compare.c
     vendor/waveshare/fonts/font20.c
     vendor/waveshare/fonts/font24.c)
 target_include_directories(bip39_fonts PUBLIC vendor/waveshare/fonts)
@@ -98,3 +100,14 @@ foreach(language IN LISTS COINFLIP_LANGUAGES)
         add_bip39_variant(${language} bip39_waveshare_${language})
     endif()
 endforeach()
+
+add_executable(bip39_waveshare_font_compare
+    font_compare.c
+    vendor/waveshare/fonts/font16_compare.c)
+target_include_directories(bip39_waveshare_font_compare PRIVATE
+    include vendor/waveshare/bsp vendor/waveshare/fonts)
+target_link_libraries(bip39_waveshare_font_compare PRIVATE
+    waveshare_display waveshare_psram pico_stdlib hardware_clocks)
+pico_enable_stdio_usb(bip39_waveshare_font_compare 0)
+pico_enable_stdio_uart(bip39_waveshare_font_compare 0)
+pico_add_extra_outputs(bip39_waveshare_font_compare)

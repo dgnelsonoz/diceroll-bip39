@@ -6,6 +6,8 @@
 #include <stddef.h>
 #include <string.h>
 
+extern const sFONT Font16Default;
+
 static void set_pixel( CoinflipCanvas *canvas, uint16_t x, uint16_t y, uint16_t color )
 {
     if( canvas == NULL || canvas->pixels == NULL || x >= canvas->width || y >= canvas->height )
@@ -87,7 +89,8 @@ static void draw_combining_mark( CoinflipCanvas *canvas, const sFONT *font,
 
     if( codepoint == 0x0301U )
     {
-        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center + 1U ), y,
+        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center + 1U ),
+                                    ( uint16_t )( y + 1U ),
                                     2U, 2U, color );
         coinflip_graphics_fill_rect( canvas, center, ( uint16_t )( y + 2U ),
                                     2U, 2U, color );
@@ -101,12 +104,12 @@ static void draw_combining_mark( CoinflipCanvas *canvas, const sFONT *font,
     }
     else if( codepoint == 0x0303U )
     {
-        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center - 3U ), y,
-                                    2U, 2U, color );
-        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center - 1U ),
-                                    ( uint16_t )( y + 2U ), 2U, 2U, color );
-        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center + 1U ), y,
-                                    2U, 2U, color );
+        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center - 2U ),
+                                    ( uint16_t )( y + 1U ), 2U, 1U, color );
+        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center ),
+                                    ( uint16_t )( y + 2U ), 2U, 1U, color );
+        coinflip_graphics_fill_rect( canvas, ( uint16_t )( center + 2U ),
+                                    ( uint16_t )( y + 1U ), 2U, 1U, color );
     }
 }
 
@@ -171,6 +174,25 @@ void coinflip_graphics_text( CoinflipCanvas *canvas, uint16_t x, uint16_t y, con
 
     draw_utf8_text( canvas, &Font16, x, y, text, scale, foreground, background );
 }
+
+void coinflip_graphics_text_default( CoinflipCanvas *canvas, uint16_t x,
+                                    uint16_t y, const char *text,
+                                    uint16_t foreground, uint16_t background )
+{
+    if( text == NULL )
+        return;
+    draw_utf8_text( canvas, &Font16Default, x, y, text, 1, foreground, background );
+}
+
+void coinflip_graphics_text12( CoinflipCanvas *canvas, uint16_t x,
+                              uint16_t y, const char *text,
+                              uint16_t foreground, uint16_t background )
+{
+    if( text == NULL )
+        return;
+    draw_utf8_text( canvas, &Font12, x, y, text, 1, foreground, background );
+}
+
 
 void coinflip_graphics_text20( CoinflipCanvas *canvas, uint16_t x, uint16_t y, const char *text, uint16_t foreground, uint16_t background )
 {

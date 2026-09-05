@@ -8,9 +8,10 @@ enum
     LCD_HEIGHT = 480U
 };
 
-static const uint16_t GREEN = 0x07e0U;
+static const uint16_t LIGHT_RED = 0xd800U;
 static const uint16_t DARK_RED = 0x7800U;
 static const uint16_t ORANGE = 0xfd20U;
+static const uint16_t LIGHT_ORANGE = 0xffa0U;
 
 void coinflip_ui_clear_hold_progress( uint16_t *pixels, uint8_t button )
 {
@@ -38,7 +39,8 @@ uint16_t coinflip_ui_show_hold_progress( uint16_t *pixels, uint8_t button,
     progress = ( uint16_t )( ( 129U * ( uint64_t )elapsed_us ) / required_us );
     if( progress > previous_progress )
     {
-        coinflip_graphics_fill_rect( &canvas, ( uint16_t )( x + previous_progress ), 328, ( uint16_t )( progress - previous_progress ), 10, GREEN );
+        coinflip_graphics_fill_rect( &canvas, ( uint16_t )( x + previous_progress ), 328, ( uint16_t )( progress - previous_progress ), 10,
+                                    button == 1U ? LIGHT_RED : LIGHT_ORANGE );
     }
     return progress;
 
