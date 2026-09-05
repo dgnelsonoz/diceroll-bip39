@@ -51,6 +51,7 @@ SRCS = \
 	mnemonic_state.c \
 	mnemonic_ui.c \
 	sha256.c \
+	ui_model.c \
 	utf8.c \
 	stm32f4xx_it.c \
 	system_stm32f4xx.c \

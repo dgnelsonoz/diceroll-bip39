@@ -5,6 +5,7 @@
 #include "layout.h"
 #include "mnemonic_state.h"
 #include "rp2350_clock.h"
+#include "ui_model.h"
 #include "utf8.h"
 
 #include "bsp_gt911.h"
@@ -45,39 +46,6 @@ typedef char wave_layout_width_must_match[
     LCD_WIDTH == DICEROLL_DISPLAY_WIDTH ? 1 : -1];
 typedef char wave_layout_height_must_match[
     LCD_HEIGHT == DICEROLL_DISPLAY_HEIGHT ? 1 : -1];
-
-static void format_partial_bits( const MnemonicState *state, char *bits,
-                                uint8_t target_bits )
-{
-    uint8_t entered = mnemonic_state_get_current_word_bit_count( state );
-    uint16_t start = ( uint16_t )( state->bit_count - entered );
-
-    for( uint8_t bit = 0; bit < target_bits; ++bit )
-    {
-        if( bit < entered )
-        {
-            uint16_t position = ( uint16_t )( start + bit );
-            uint8_t value = ( uint8_t )( ( state->entropy[ position / 8U ] >> ( 7U - position % 8U ) ) & 1U );
-            bits[ bit ] = value != 0U ? '1' : '0';
-        }
-        else
-            bits[ bit ] = '-';
-    }
-    bits[ target_bits ] = '\0';
-}
-
-static void format_index_bits( uint16_t index, char *bits, bool checksum_word )
-{
-    uint8_t output = 0;
-    for( uint8_t source_bit = 0; source_bit < MNEMONIC_WORD_BITS; ++source_bit )
-    {
-        if( checksum_word && source_bit == 3U )
-            bits[ output++ ] = '|';
-        bits[ output++ ] = ( index & ( 1U << ( 10U - source_bit ) ) ) != 0U
-                         ? '1' : '0';
-    }
-    bits[ output ] = '\0';
-}
 
 static uint8_t utf8_character_count( const char *text )
 {
@@ -185,10 +153,10 @@ static void draw_status( CoinflipCanvas *canvas, const MnemonicState *state )
 
             if( mnemonic_state_get_word_index( state, current_word,
                                                &completed_index ) == 0 )
-                format_index_bits( completed_index, bits, false );
+                diceroll_format_index_bits( completed_index, bits, false );
         }
         else
-            format_partial_bits( state, bits, required );
+            diceroll_format_partial_bits( state, bits, required );
         coinflip_graphics_text20( canvas, 10, 258, "WORD", WHITE, BLACK );
         snprintf( number, sizeof( number ), "%u", current_word );
         coinflip_graphics_text20( canvas,
@@ -222,8 +190,8 @@ static void draw_status( CoinflipCanvas *canvas, const MnemonicState *state )
                          &detail_index );
         if( result == 0 )
         {
-            format_index_bits( detail_index, verification_bits,
-                              detail_word == MNEMONIC_WORD_COUNT );
+            diceroll_format_index_bits( detail_index, verification_bits,
+                                        detail_word == MNEMONIC_WORD_COUNT );
             snprintf( verification, sizeof( verification ),
                      "WORD %u: %s = INDEX %u = LIST %u = %s",
                      detail_word, verification_bits, detail_index,
@@ -269,7 +237,7 @@ static void update_state_regions( const MnemonicState *state,
             if( mnemonic_state_get_word_index( state, previous_word,
                                                &previous_index ) == 0 )
             {
-                format_index_bits( previous_index, previous_bits, false );
+                diceroll_format_index_bits( previous_index, previous_bits, false );
                 coinflip_graphics_text20( &canvas, 540, 258, previous_bits,
                                          WHITE, BLACK );
             }
@@ -297,7 +265,7 @@ static void update_state_regions( const MnemonicState *state,
         if( mnemonic_state_get_word_index( state, current_word - 1U,
                                            &previous_index ) == 0 )
         {
-            format_index_bits( previous_index, previous_bits, false );
+            diceroll_format_index_bits( previous_index, previous_bits, false );
             coinflip_graphics_text20( &canvas, 540, 258, previous_bits,
                                      WHITE, BLACK );
         }
@@ -321,7 +289,7 @@ static void update_state_regions( const MnemonicState *state,
             uint8_t required = current_word == MNEMONIC_WORD_COUNT ? 3U : 11U;
 
             coinflip_graphics_fill_rect( &canvas, 540, 258, 200, 24, BLACK );
-            format_partial_bits( state, partial_bits, required );
+            diceroll_format_partial_bits( state, partial_bits, required );
             coinflip_graphics_text20( &canvas, 540, 258, partial_bits,
                                      WHITE, BLACK );
         }

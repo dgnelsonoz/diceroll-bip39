@@ -4,6 +4,7 @@
 #include "fonts.h"
 #include "layout.h"
 #include "stm32469i_discovery_lcd.h"
+#include "ui_model.h"
 #include "utf8.h"
 
 #include <stdint.h>
@@ -134,41 +135,6 @@ static void draw_grid_lines(void)
     }
 }
 
-static void format_partial_bits(const MnemonicState *state, char *bits,
-                                uint8_t target_bits)
-{
-    uint8_t entered = mnemonic_state_get_current_word_bit_count(state);
-    uint16_t start = (uint16_t)(state->bit_count - entered);
-    uint8_t ii;
-
-    for (ii = 0; ii < target_bits; ii++) {
-        if (ii < entered) {
-            uint16_t position = start + ii;
-            uint8_t value = (uint8_t)((state->entropy[position / 8U] >>
-                                      (7U - (position % 8U))) & 1U);
-            bits[ii] = value != 0U ? '1' : '0';
-        } else {
-            bits[ii] = '-';
-        }
-    }
-    bits[target_bits] = '\0';
-}
-
-static void format_index_bits(uint16_t index, char *bits, int checksum_word)
-{
-    uint8_t source_bit;
-    uint8_t output = 0;
-
-    for (source_bit = 0; source_bit < MNEMONIC_WORD_BITS; source_bit++) {
-        if (checksum_word && source_bit == 3U) {
-            bits[output++] = '|';
-        }
-        bits[output++] = (index & (1U << (10U - source_bit))) != 0U
-                         ? '1' : '0';
-    }
-    bits[output] = '\0';
-}
-
 static void draw_word_cells(const MnemonicState *state)
 {
     char entry[24];
@@ -267,10 +233,10 @@ static void draw_status(const MnemonicState *state)
 
             if (mnemonic_state_get_word_index(state, word_number,
                                                &completed_index) == 0) {
-                format_index_bits(completed_index, bits, 0);
+                diceroll_format_index_bits(completed_index, bits, 0);
             }
         } else {
-            format_partial_bits(state, bits, required);
+            diceroll_format_partial_bits(state, bits, required);
         }
         snprintf(status, sizeof(status),
                  "WORD %02u/24   FLIP %02u/%02u   BITS: %s",
@@ -287,8 +253,8 @@ static void draw_status(const MnemonicState *state)
         } else {
             mnemonic_state_get_word_index(state, detail_word, &detail_index);
         }
-        format_index_bits(detail_index, verification_bits,
-                          detail_word == MNEMONIC_WORD_COUNT);
+        diceroll_format_index_bits(detail_index, verification_bits,
+                                   detail_word == MNEMONIC_WORD_COUNT);
         snprintf(verification, sizeof(verification),
                  "WORD %02u: %s = INDEX %04u = LIST %04u = %s",
                  (unsigned int)detail_word, verification_bits,

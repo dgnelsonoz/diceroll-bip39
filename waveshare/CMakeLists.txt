@@ -20,6 +20,7 @@ add_compile_definitions(PICO_XOSC_STARTUP_DELAY_MULTIPLIER=64)
 add_library(bip39_core STATIC
     ../common/mnemonic_state.c
     ../common/sha256.c
+    ../common/ui_model.c
 )
 target_include_directories(bip39_core PUBLIC include ../common)
 
