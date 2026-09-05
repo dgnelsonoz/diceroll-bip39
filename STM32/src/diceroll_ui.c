@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 typedef char button_widths_must_fill_display[
     (DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH +
@@ -93,6 +94,18 @@ static uint16_t display_text_width(const char *text)
     return (uint16_t)(glyphs * BSP_LCD_GetFont()->Width);
 }
 
+static uint8_t utf8_character_count( const char *text )
+{
+    const char *cursor = text;
+    uint32_t codepoint;
+    uint8_t count = 0U;
+
+    while( diceroll_utf8_next( &cursor, &codepoint ) > 0 )
+        if( !is_combining_mark( codepoint ) )
+            ++count;
+    return count;
+}
+
 static void display_text_centered(uint16_t y, const char *text)
 {
     uint16_t width = display_text_width(text);
@@ -102,15 +115,15 @@ static void display_text_centered(uint16_t y, const char *text)
     display_text(x, y, text);
 }
 
-static void draw_title(void)
+static void draw_title( void )
 {
-    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-    BSP_LCD_FillRect(0, 0, DICEROLL_DISPLAY_WIDTH, DICEROLL_TITLE_HEIGHT);
-    BSP_LCD_SetFont(&Font20);
-    BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-    BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
-    display_text_centered(6, "DICE ROLL TO BIP-39");
-    BSP_LCD_DrawHLine(0, DICEROLL_TITLE_HEIGHT - 1U, DICEROLL_DISPLAY_WIDTH);
+    BSP_LCD_SetTextColor( LCD_COLOR_BLACK );
+    BSP_LCD_FillRect( 0, 0, DICEROLL_DISPLAY_WIDTH, DICEROLL_TITLE_HEIGHT );
+    BSP_LCD_SetFont( &Font24 );
+    BSP_LCD_SetTextColor( LCD_COLOR_WHITE );
+    BSP_LCD_SetBackColor( LCD_COLOR_BLACK );
+    display_text_centered( 3, "DICE ROLL TO BIP-39" );
+    BSP_LCD_DrawHLine( 0, DICEROLL_TITLE_HEIGHT - 1U, DICEROLL_DISPLAY_WIDTH );
 }
 
 static void get_word_cell(uint8_t word_number, uint16_t *x, uint16_t *y)
@@ -135,135 +148,154 @@ static void draw_grid_lines(void)
     }
 }
 
-static void draw_word_cells(const MnemonicState *state)
+static void draw_word_cells( const MnemonicState *state )
 {
-    char entry[24];
-    uint8_t word_number;
-
-    for (word_number = 1; word_number <= MNEMONIC_WORD_COUNT; word_number++) {
+    for( uint8_t word_number = 1U; word_number <= MNEMONIC_WORD_COUNT; ++word_number )
+    {
+        char label[ 24 ];
+        char list_number[ 6 ];
         uint16_t x;
         uint16_t y;
         uint16_t index;
-        int has_word;
+        uint8_t current_word = mnemonic_state_get_current_word_number( state );
+        int has_word = word_number < MNEMONIC_WORD_COUNT
+                       ? mnemonic_state_get_word_index( state, word_number, &index ) == 0
+                       : mnemonic_state_get_final_word_index( state, &index ) == 0;
 
-        get_word_cell(word_number, &x, &y);
-        BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-        BSP_LCD_FillRect(x + 1U, y, DICEROLL_WORD_COLUMN_WIDTH - 1U,
-                         DICEROLL_WORD_ROW_HEIGHT - 1U);
+        get_word_cell( word_number, &x, &y );
+        BSP_LCD_SetTextColor( LCD_COLOR_BLACK );
+        BSP_LCD_FillRect( x + 1U, y, DICEROLL_WORD_COLUMN_WIDTH - 1U,
+                          DICEROLL_WORD_ROW_HEIGHT - 1U );
 
-        if (word_number <= MNEMONIC_DIRECT_WORDS) {
-            has_word = mnemonic_state_get_word_index(state, word_number,
-                                                     &index) == 0;
-        } else {
-            has_word = mnemonic_state_get_final_word_index(state, &index) == 0;
+        if( has_word )
+        {
+            const char *word_text = bip39_get_word_by_index( index );
+            uint8_t characters = utf8_character_count( word_text );
+            const char *separator = word_number <= 6U ? " " : word_number < 10U ? "  " : " ";
+            int offset = snprintf( label, sizeof( label ), "%u%s%s", word_number,
+                                   separator, word_text );
+
+            while( characters++ < 8U && offset < ( int )sizeof( label ) - 1 )
+                label[ offset++ ] = ' ';
+            label[ offset ] = '\0';
+            snprintf( list_number, sizeof( list_number ), "%u", index + 1U );
         }
+        else if( word_number == current_word && !mnemonic_state_entropy_complete( state ) )
+            snprintf( label, sizeof( label ), "%u%s[%s]", word_number,
+                      word_number <= 6U ? " " : word_number < 10U ? "  " : " ",
+                      mnemonic_state_get_current_word_bit_count( state ) == 0U
+                      ? "ready" : "in progress" );
+        else if( word_number == MNEMONIC_WORD_COUNT )
+            snprintf( label, sizeof( label ), "%u%s[CHECKSUM]", word_number,
+                      word_number <= 6U ? " " : word_number < 10U ? "  " : " " );
+        else
+            snprintf( label, sizeof( label ), "%u", word_number );
 
-        if (has_word) {
-            snprintf(entry, sizeof(entry), "%02u %-8s %04u",
-                     (unsigned int)word_number,
-                     bip39_get_word_by_index(index),
-                     (unsigned int)index + 1U);
-        } else if (word_number == mnemonic_state_get_current_word_number(state)) {
-            const char *state_label =
-                mnemonic_state_get_current_word_bit_count(state) == 0U
-                ? "ready" : "in progress";
-            snprintf(entry, sizeof(entry), "%02u [%s]",
-                     (unsigned int)word_number, state_label);
-        } else if (word_number == 24U) {
-            snprintf(entry, sizeof(entry), "%02u [checksum]",
-                     (unsigned int)word_number);
-        } else {
-            snprintf(entry, sizeof(entry), "%02u",
-                     (unsigned int)word_number);
-        }
+        BSP_LCD_SetFont( &Font16 );
+        BSP_LCD_SetBackColor( LCD_COLOR_BLACK );
+        BSP_LCD_SetTextColor( word_number == current_word &&
+                              !mnemonic_state_entropy_complete( state )
+                              ? LCD_COLOR_CYAN : LCD_COLOR_WHITE );
+        display_text( x + 10U, y + 10U, label );
+        if( has_word )
+            display_text( ( uint16_t )( x + 190U - strlen( list_number ) * Font16.Width ),
+                          y + 10U, list_number );
 
-        BSP_LCD_SetFont(&Font16);
-        BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
-        BSP_LCD_SetTextColor(word_number ==
-                            mnemonic_state_get_current_word_number(state) &&
-                            !mnemonic_state_entropy_complete(state)
-                            ? LCD_COLOR_CYAN : LCD_COLOR_WHITE);
-        display_text(x + 10U, y + 12U, entry);
-
-        if (word_number == selected_word) {
-            BSP_LCD_SetTextColor(LCD_COLOR_YELLOW);
-            BSP_LCD_DrawRect(x + 2U, y + 2U,
-                             DICEROLL_WORD_COLUMN_WIDTH - 4U,
-                             DICEROLL_WORD_ROW_HEIGHT - 4U);
+        if( word_number == selected_word )
+        {
+            BSP_LCD_SetTextColor( LCD_COLOR_YELLOW );
+            BSP_LCD_DrawRect( x + 2U, y + 2U,
+                              DICEROLL_WORD_COLUMN_WIDTH - 4U,
+                              DICEROLL_WORD_ROW_HEIGHT - 4U );
         }
     }
 }
 
-static void draw_status(const MnemonicState *state)
+static void draw_status( const MnemonicState *state )
 {
-    char status[64];
-    char bits[MNEMONIC_WORD_BITS + 1];
-    char verification[72];
-    char verification_bits[MNEMONIC_WORD_BITS + 2];
-    uint8_t word_number = mnemonic_state_get_current_word_number(state);
-    uint8_t entered = mnemonic_state_get_current_word_bit_count(state);
-    uint8_t required = word_number == 24U ? 3U : MNEMONIC_WORD_BITS;
-    uint8_t completed = mnemonic_state_get_completed_word_count(state);
-    uint8_t detail_word;
-    uint16_t detail_index;
+    char bits[ MNEMONIC_WORD_BITS + 1U ];
+    char number[ 4 ];
+    uint8_t word_number = mnemonic_state_get_current_word_number( state );
+    uint8_t entered = mnemonic_state_get_current_word_bit_count( state );
+    uint8_t required = word_number == MNEMONIC_WORD_COUNT ? 3U : MNEMONIC_WORD_BITS;
+    uint8_t completed = mnemonic_state_get_completed_word_count( state );
     int word_boundary = state->bit_count > 0U &&
                         state->bit_count < MNEMONIC_ENTROPY_BITS &&
                         state->bit_count % MNEMONIC_WORD_BITS == 0U;
 
-    if (word_boundary) {
+    if( word_boundary )
+    {
         --word_number;
-        required = word_number == 24U ? 3U : MNEMONIC_WORD_BITS;
+        required = word_number == MNEMONIC_WORD_COUNT ? 3U : MNEMONIC_WORD_BITS;
         entered = required;
     }
 
-    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-    BSP_LCD_FillRect(0, DICEROLL_STATUS_TOP, DICEROLL_DISPLAY_WIDTH,
-                     DICEROLL_STATUS_HEIGHT);
+    BSP_LCD_SetTextColor( LCD_COLOR_BLACK );
+    BSP_LCD_FillRect( 0, DICEROLL_STATUS_TOP, DICEROLL_DISPLAY_WIDTH,
+                      DICEROLL_STATUS_HEIGHT );
 
-    BSP_LCD_SetFont(&Font20);
-    BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
-    if (mnemonic_state_entropy_complete(state)) {
-        BSP_LCD_SetTextColor(LCD_COLOR_GREEN);
-        display_text_centered(DICEROLL_STATUS_TOP + 8U,
-                              "PHRASE COMPLETE - 24 WORDS");
+    BSP_LCD_SetFont( &Font20 );
+    BSP_LCD_SetBackColor( LCD_COLOR_BLACK );
+    if( mnemonic_state_entropy_complete( state ) )
+    {
+        BSP_LCD_SetTextColor( LCD_COLOR_GREEN );
+        display_text_centered( DICEROLL_STATUS_TOP + 12U,
+                               "PHRASE COMPLETE - 24 WORDS" );
         completed = MNEMONIC_WORD_COUNT;
-    } else {
-        if (word_boundary) {
+    }
+    else
+    {
+        if( word_boundary )
+        {
             uint16_t completed_index;
 
-            if (mnemonic_state_get_word_index(state, word_number,
-                                               &completed_index) == 0) {
-                diceroll_format_index_bits(completed_index, bits, 0);
-            }
-        } else {
-            diceroll_format_partial_bits(state, bits, required);
+            if( mnemonic_state_get_word_index( state, word_number,
+                                               &completed_index ) == 0 )
+                diceroll_format_index_bits( completed_index, bits, 0 );
         }
-        snprintf(status, sizeof(status),
-                 "WORD %02u/24   FLIP %02u/%02u   BITS: %s",
-                 (unsigned int)word_number, (unsigned int)entered,
-                 (unsigned int)required, bits);
-        BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-        display_text(20, DICEROLL_STATUS_TOP + 8U, status);
+        else
+            diceroll_format_partial_bits( state, bits, required );
+
+        BSP_LCD_SetTextColor( LCD_COLOR_WHITE );
+        display_text( 10, DICEROLL_STATUS_TOP + 10U, "WORD" );
+        snprintf( number, sizeof( number ), "%u", word_number );
+        display_text( ( uint16_t )( 116U - strlen( number ) * Font20.Width ),
+                      DICEROLL_STATUS_TOP + 10U, number );
+        display_text( 116, DICEROLL_STATUS_TOP + 10U, "/" );
+        display_text( 130, DICEROLL_STATUS_TOP + 10U, "24" );
+        display_text( 200, DICEROLL_STATUS_TOP + 10U, "FLIP" );
+        snprintf( number, sizeof( number ), "%u", entered );
+        display_text( ( uint16_t )( 306U - strlen( number ) * Font20.Width ),
+                      DICEROLL_STATUS_TOP + 10U, number );
+        display_text( 306, DICEROLL_STATUS_TOP + 10U, "/" );
+        snprintf( number, sizeof( number ), "%u", required );
+        display_text( 320, DICEROLL_STATUS_TOP + 10U, number );
+        display_text( 470, DICEROLL_STATUS_TOP + 10U, "BITS" );
+        display_text( 540, DICEROLL_STATUS_TOP + 10U, bits );
     }
 
-    if (completed > 0U) {
-        detail_word = selected_word != 0U ? selected_word : completed;
-        if (detail_word == MNEMONIC_WORD_COUNT) {
-            mnemonic_state_get_final_word_index(state, &detail_index);
-        } else {
-            mnemonic_state_get_word_index(state, detail_word, &detail_index);
+    if( completed > 0U )
+    {
+        char verification[ 72 ];
+        char verification_bits[ MNEMONIC_WORD_BITS + 2U ];
+        uint8_t detail_word = selected_word != 0U ? selected_word : completed;
+        uint16_t detail_index;
+        int result = detail_word == MNEMONIC_WORD_COUNT
+                     ? mnemonic_state_get_final_word_index( state, &detail_index )
+                     : mnemonic_state_get_word_index( state, detail_word, &detail_index );
+
+        if( result == 0 )
+        {
+            diceroll_format_index_bits( detail_index, verification_bits,
+                                        detail_word == MNEMONIC_WORD_COUNT );
+            snprintf( verification, sizeof( verification ),
+                      "WORD %u: %s = INDEX %u = LIST %u = %s",
+                      detail_word, verification_bits, detail_index,
+                      detail_index + 1U, bip39_get_word_by_index( detail_index ) );
+            BSP_LCD_SetFont( &Font16 );
+            BSP_LCD_SetTextColor( LCD_COLOR_LIGHTGRAY );
+            display_text( 20, DICEROLL_STATUS_TOP + 48U, verification );
         }
-        diceroll_format_index_bits(detail_index, verification_bits,
-                                   detail_word == MNEMONIC_WORD_COUNT);
-        snprintf(verification, sizeof(verification),
-                 "WORD %02u: %s = INDEX %04u = LIST %04u = %s",
-                 (unsigned int)detail_word, verification_bits,
-                 (unsigned int)detail_index,
-                 (unsigned int)detail_index + 1U,
-                 bip39_get_word_by_index(detail_index));
-        BSP_LCD_SetFont(&Font16);
-        BSP_LCD_SetTextColor(LCD_COLOR_LIGHTGRAY);
-        display_text(20, DICEROLL_STATUS_TOP + 48U, verification);
     }
 }
 
@@ -320,56 +352,50 @@ static void button_bounds(DicerollButton button, uint16_t *x, uint16_t *width)
     }
 }
 
-static void draw_buttons(int phrase_complete)
+static void draw_buttons( int phrase_complete )
 {
     uint16_t back_x = DICEROLL_RESTART_WIDTH;
     uint16_t zero_x = DICEROLL_RESTART_WIDTH + DICEROLL_BACK_WIDTH;
     uint16_t one_x = zero_x + DICEROLL_BIT_BUTTON_WIDTH;
 
-    fill_button(0, DICEROLL_RESTART_WIDTH,
-                button_color(DICEROLL_BUTTON_RESTART, phrase_complete));
-    fill_button(back_x, DICEROLL_BACK_WIDTH,
-                button_color(DICEROLL_BUTTON_BACK, phrase_complete));
-    fill_button(zero_x, DICEROLL_BIT_BUTTON_WIDTH,
-                button_color(DICEROLL_BUTTON_ZERO, phrase_complete));
-    fill_button(one_x, DICEROLL_BIT_BUTTON_WIDTH,
-                button_color(DICEROLL_BUTTON_ONE, phrase_complete));
+    fill_button( 0, DICEROLL_RESTART_WIDTH,
+                 button_color( DICEROLL_BUTTON_RESTART, phrase_complete ) );
+    fill_button( back_x, DICEROLL_BACK_WIDTH,
+                 button_color( DICEROLL_BUTTON_BACK, phrase_complete ) );
+    fill_button( zero_x, DICEROLL_BIT_BUTTON_WIDTH,
+                 button_color( DICEROLL_BUTTON_ZERO, phrase_complete ) );
+    fill_button( one_x, DICEROLL_BIT_BUTTON_WIDTH,
+                 button_color( DICEROLL_BUTTON_ONE, phrase_complete ) );
 
-    BSP_LCD_SetTextColor(phrase_complete ? LCD_COLOR_DARKGRAY : LCD_COLOR_BLACK);
-    BSP_LCD_DrawVLine(back_x, DICEROLL_BUTTON_TOP, DICEROLL_BUTTON_HEIGHT);
-    BSP_LCD_DrawVLine(zero_x, DICEROLL_BUTTON_TOP, DICEROLL_BUTTON_HEIGHT);
-    BSP_LCD_DrawVLine(one_x, DICEROLL_BUTTON_TOP, DICEROLL_BUTTON_HEIGHT);
+    BSP_LCD_SetTextColor( phrase_complete ? LCD_COLOR_DARKGRAY : LCD_COLOR_BLACK );
+    BSP_LCD_DrawVLine( back_x, DICEROLL_BUTTON_TOP, DICEROLL_BUTTON_HEIGHT );
+    BSP_LCD_DrawVLine( zero_x, DICEROLL_BUTTON_TOP, DICEROLL_BUTTON_HEIGHT );
+    BSP_LCD_DrawVLine( one_x, DICEROLL_BUTTON_TOP, DICEROLL_BUTTON_HEIGHT );
 
-    BSP_LCD_SetFont(&Font16);
-    BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-    BSP_LCD_SetBackColor(LCD_COLOR_DARKRED);
-    display_text(10, 350, "HOLD 1 SEC");
-    BSP_LCD_SetFont(&Font20);
-    display_text(16, 395, "RESTART");
+    BSP_LCD_SetFont( &Font12 );
+    BSP_LCD_SetTextColor( LCD_COLOR_WHITE );
+    BSP_LCD_SetBackColor( LCD_COLOR_DARKRED );
+    display_text( 51, 350, "HOLD" );
+    BSP_LCD_SetFont( &Font16 );
+    display_text( 26, 390, "RESTART" );
 
-    BSP_LCD_SetFont(&Font16);
-    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-    BSP_LCD_SetBackColor(button_color(DICEROLL_BUTTON_BACK,
-                                     phrase_complete));
-    display_text(173, 350, "HOLD");
-    BSP_LCD_SetFont(&Font20);
-    display_text(165, 395, "BACK");
+    BSP_LCD_SetFont( &Font12 );
+    BSP_LCD_SetTextColor( LCD_COLOR_BLACK );
+    BSP_LCD_SetBackColor( button_color( DICEROLL_BUTTON_BACK, phrase_complete ) );
+    display_text( 181, 350, "HOLD" );
+    BSP_LCD_SetFont( &Font16 );
+    display_text( 168, 390, "BACK" );
 
-    BSP_LCD_SetFont(&Font20);
-    BSP_LCD_SetTextColor(phrase_complete ? LCD_COLOR_DARKGRAY : LCD_COLOR_BLACK);
-    BSP_LCD_SetBackColor(button_color(DICEROLL_BUTTON_ZERO,
-                                     phrase_complete));
-    display_text(360, 350, "HEADS");
-    BSP_LCD_SetFont(&Font24);
-    display_text(386, 395, "0");
+    BSP_LCD_SetFont( &Font24 );
+    BSP_LCD_SetTextColor( phrase_complete ? LCD_COLOR_DARKGRAY : LCD_COLOR_BLACK );
+    BSP_LCD_SetBackColor( button_color( DICEROLL_BUTTON_ZERO, phrase_complete ) );
+    display_text( 352, 354, "HEADS" );
+    display_text( 387, 406, "0" );
 
-    BSP_LCD_SetFont(&Font20);
-    BSP_LCD_SetTextColor(phrase_complete ? LCD_COLOR_DARKGRAY : LCD_COLOR_WHITE);
-    BSP_LCD_SetBackColor(button_color(DICEROLL_BUTTON_ONE,
-                                     phrase_complete));
-    display_text(630, 350, "TAILS");
-    BSP_LCD_SetFont(&Font24);
-    display_text(656, 395, "1");
+    BSP_LCD_SetTextColor( phrase_complete ? LCD_COLOR_DARKGRAY : LCD_COLOR_WHITE );
+    BSP_LCD_SetBackColor( button_color( DICEROLL_BUTTON_ONE, phrase_complete ) );
+    display_text( 622, 354, "TAILS" );
+    display_text( 657, 406, "1" );
 }
 
 void diceroll_ui_draw(const MnemonicState *state)
@@ -458,11 +484,13 @@ void diceroll_ui_show_hold_progress(DicerollButton button,
     }
     progress = (uint16_t)(((uint32_t)(width - 1U) * elapsed_ms) / required_ms);
 
-    BSP_LCD_SetTextColor(button_color(button, 0));
-    BSP_LCD_FillRect(x + 1U, DICEROLL_BUTTON_TOP, width - 1U, 10U);
-    if (progress > 0U) {
-        BSP_LCD_SetTextColor(LCD_COLOR_GREEN);
-        BSP_LCD_FillRect(x + 1U, DICEROLL_BUTTON_TOP, progress, 10U);
+    BSP_LCD_SetTextColor( button_color( button, 0 ) );
+    BSP_LCD_FillRect( x + 1U, DICEROLL_BUTTON_TOP, width - 1U, 10U );
+    if( progress > 0U )
+    {
+        BSP_LCD_SetTextColor( button == DICEROLL_BUTTON_RESTART
+                              ? 0xffd80000U : 0xfffff500U );
+        BSP_LCD_FillRect( x + 1U, DICEROLL_BUTTON_TOP, progress, 10U );
     }
 }
 
