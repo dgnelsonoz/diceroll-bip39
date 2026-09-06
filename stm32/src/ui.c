@@ -129,7 +129,7 @@ static void draw_title( void )
     BSP_LCD_SetFont( &Font24 );
     BSP_LCD_SetTextColor( LCD_COLOR_WHITE );
     BSP_LCD_SetBackColor( LCD_COLOR_BLACK );
-    display_text_centered( 3, "DICE ROLL TO BIP-39" );
+    display_text_centered( 3, "DICE ROLL OR COIN FLIP TO BIP-39" );
     BSP_LCD_DrawHLine( 0, DICEROLL_TITLE_HEIGHT - 1U, DICEROLL_DISPLAY_WIDTH );
 }
 
@@ -264,17 +264,17 @@ static void draw_status( const MnemonicState *state )
         BSP_LCD_SetTextColor( LCD_COLOR_WHITE );
         display_text( 10, DICEROLL_STATUS_TOP + 10U, "WORD" );
         snprintf( number, sizeof( number ), "%u", word_number );
-        display_text( ( uint16_t )( 116U - strlen( number ) * Font20.Width ),
+        display_text( ( uint16_t )( 100U - strlen( number ) * Font20.Width ),
                       DICEROLL_STATUS_TOP + 10U, number );
-        display_text( 116, DICEROLL_STATUS_TOP + 10U, "/" );
-        display_text( 130, DICEROLL_STATUS_TOP + 10U, "24" );
-        display_text( 200, DICEROLL_STATUS_TOP + 10U, "FLIP" );
+        display_text( 100, DICEROLL_STATUS_TOP + 10U, "/" );
+        display_text( 114, DICEROLL_STATUS_TOP + 10U, "24" );
+        display_text( 200, DICEROLL_STATUS_TOP + 10U, "ROLL/FLIP" );
         snprintf( number, sizeof( number ), "%u", entered );
-        display_text( ( uint16_t )( 306U - strlen( number ) * Font20.Width ),
+        display_text( ( uint16_t )( 364U - strlen( number ) * Font20.Width ),
                       DICEROLL_STATUS_TOP + 10U, number );
-        display_text( 306, DICEROLL_STATUS_TOP + 10U, "/" );
+        display_text( 364, DICEROLL_STATUS_TOP + 10U, "/" );
         snprintf( number, sizeof( number ), "%u", required );
-        display_text( 320, DICEROLL_STATUS_TOP + 10U, number );
+        display_text( 378, DICEROLL_STATUS_TOP + 10U, number );
         display_text( 470, DICEROLL_STATUS_TOP + 10U, "BITS" );
         display_text( 540, DICEROLL_STATUS_TOP + 10U, bits );
     }

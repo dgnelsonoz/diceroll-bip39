@@ -147,18 +147,18 @@ static void draw_status( DicerollCanvas *canvas, const MnemonicState *state )
         graphics_text20( canvas, 10, 258, "WORD", WHITE, BLACK );
         snprintf( number, sizeof( number ), "%u", current_word );
         graphics_text20( canvas,
-                         ( uint16_t )( 116U - strlen( number ) * 14U ),
+                         ( uint16_t )( 100U - strlen( number ) * 14U ),
                          258, number, WHITE, BLACK );
-        graphics_text20( canvas, 116, 258, "/", WHITE, BLACK );
-        graphics_text20( canvas, 130, 258, "24", WHITE, BLACK );
-        graphics_text20( canvas, 200, 258, "FLIP", WHITE, BLACK );
+        graphics_text20( canvas, 100, 258, "/", WHITE, BLACK );
+        graphics_text20( canvas, 114, 258, "24", WHITE, BLACK );
+        graphics_text20( canvas, 200, 258, "ROLL/FLIP", WHITE, BLACK );
         snprintf( number, sizeof( number ), "%u", entered );
         graphics_text20( canvas,
-                         ( uint16_t )( 306U - strlen( number ) * 14U ),
+                         ( uint16_t )( 364U - strlen( number ) * 14U ),
                          258, number, WHITE, BLACK );
-        graphics_text20( canvas, 306, 258, "/", WHITE, BLACK );
+        graphics_text20( canvas, 364, 258, "/", WHITE, BLACK );
         snprintf( number, sizeof( number ), "%u", required );
-        graphics_text20( canvas, 320, 258, number, WHITE, BLACK );
+        graphics_text20( canvas, 378, 258, number, WHITE, BLACK );
         graphics_text20( canvas, 470, 258, "BITS", WHITE, BLACK );
         graphics_text20( canvas, 540, 258, bits, WHITE, BLACK );
     }
@@ -258,9 +258,9 @@ static void update_state_regions( const MnemonicState *state, uint8_t previous_w
     }
 
     snprintf( number, sizeof( number ), "%u", entered );
-    graphics_fill_rect( &canvas, 260, 258, 46, 24, BLACK );
+    graphics_fill_rect( &canvas, 336, 258, 28, 24, BLACK );
     graphics_text20( &canvas,
-                     ( uint16_t )( 306U - strlen( number ) * 14U ),
+                     ( uint16_t )( 364U - strlen( number ) * 14U ),
                      258, number, WHITE, BLACK );
 
     if( entered > previous_entered )
@@ -309,7 +309,7 @@ static void draw_diceroll_screen( uint16_t *pixels, const MnemonicState *state )
     DicerollCanvas canvas = { pixels, LCD_WIDTH, LCD_HEIGHT };
 
     graphics_clear( &canvas, BLACK );
-    graphics_text24_centered( &canvas, 3, "DICE ROLL TO BIP-39",
+    graphics_text24_centered( &canvas, 3, "DICE ROLL OR COIN FLIP TO BIP-39",
                               WHITE, BLACK );
     graphics_fill_rect( &canvas, 0, DICEROLL_TITLE_HEIGHT - 1U,
                         DICEROLL_DISPLAY_WIDTH, 1, WHITE );
