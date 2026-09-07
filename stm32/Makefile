@@ -4,6 +4,7 @@ VERSION ?= dev
 LANGUAGE ?= english
 WORDLIST ?= $(LANGUAGE)
 PROJECT ?= bip39-stm32-$(WORDLIST)
+RELEASE_NAME ?= stm32-$(WORDLIST)
 
 LANGUAGES = english czech french italian portuguese spanish
 
@@ -132,9 +133,9 @@ release:
 
 release-variant: variant
 	@mkdir -p $(RELEASE_DIR)
-	cp $(BUILD_DIR)/$(PROJECT).elf $(RELEASE_DIR)/$(PROJECT)-$(VERSION).elf
-	cp $(BUILD_DIR)/$(PROJECT).bin $(RELEASE_DIR)/$(PROJECT)-$(VERSION).bin
-	@echo "Release files: $(RELEASE_DIR)/$(PROJECT)-$(VERSION).elf and $(RELEASE_DIR)/$(PROJECT)-$(VERSION).bin"
+	cp $(BUILD_DIR)/$(PROJECT).elf $(RELEASE_DIR)/$(RELEASE_NAME)-$(VERSION).elf
+	cp $(BUILD_DIR)/$(PROJECT).bin $(RELEASE_DIR)/$(RELEASE_NAME)-$(VERSION).bin
+	@echo "Release files: $(RELEASE_DIR)/$(RELEASE_NAME)-$(VERSION).elf and $(RELEASE_DIR)/$(RELEASE_NAME)-$(VERSION).bin"
 
 test: $(BUILD_DIR)/test_mnemonic_state
 	$(BUILD_DIR)/test_mnemonic_state

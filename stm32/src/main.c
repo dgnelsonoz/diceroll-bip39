@@ -9,27 +9,23 @@ enum
 {
     TOUCH_POLL_MS = 20,
     BACK_HOLD_MS = 500,
-    RESTART_HOLD_MS = 1000,
-    COMPLETION_LED_STEP_MS = 100,
-    COMPLETION_LED_SWEEP_COUNT = 3
+    RESTART_HOLD_MS = 1000
 };
 
 static void SystemClock_Config( void );
 static void FatalError( void );
-static void SweepCompletionLeds( void );
 static void WaitForTouchRelease( void );
+static uint8_t SelectWordCount( void );
 static int WaitForProtectedButton( DicerollButton button, uint32_t required_ms, int phrase_complete );
 
 int main( void )
 {
     MnemonicState mnemonic;
-    Led_TypeDef led;
 
     HAL_Init( );
     SystemClock_Config( );
 
-    for( led = LED1; led <= LED4; ++led )
-        BSP_LED_Init( led );
+    BSP_LED_Init( LED4 );
     if( BSP_LCD_Init( ) != LCD_OK )
         FatalError( );
 
@@ -40,7 +36,7 @@ int main( void )
         ui_draw_error( "TOUCHSCREEN NOT DETECTED" );
         FatalError( );
     }
-    mnemonic_state_init( &mnemonic );
+    mnemonic_state_init_words( &mnemonic, SelectWordCount( ) );
     ui_draw( &mnemonic );
 
     while( 1 )
@@ -58,9 +54,9 @@ int main( void )
                 if( WaitForProtectedButton( button, RESTART_HOLD_MS,
                                             phrase_complete ) )
                 {
-                    mnemonic_state_init( &mnemonic );
-                    BSP_LED_Off( LED4 );
-                    ui_update( &mnemonic );
+                    mnemonic_state_init_words( &mnemonic, mnemonic_state_get_word_count( &mnemonic ) );
+                    mnemonic_state_init_words( &mnemonic, SelectWordCount( ) );
+                    ui_draw( &mnemonic );
                     WaitForTouchRelease( );
                 }
             }
@@ -72,7 +68,6 @@ int main( void )
                                             phrase_complete ) )
                 {
                     mnemonic_state_backspace( &mnemonic );
-                    BSP_LED_Off( LED4 );
                     ui_update( &mnemonic );
                     WaitForTouchRelease( );
                 }
@@ -84,11 +79,7 @@ int main( void )
                 uint8_t bit = button == DICEROLL_BUTTON_ONE ? 1U : 0U;
 
                 if( mnemonic_state_add_flip( &mnemonic, bit ) == 0 )
-                {
                     ui_update( &mnemonic );
-                    if( mnemonic_state_entropy_complete( &mnemonic ) )
-                        SweepCompletionLeds( );
-                }
                 WaitForTouchRelease( );
             }
             else if( button == DICEROLL_BUTTON_NONE &&
@@ -102,20 +93,21 @@ int main( void )
     }
 }
 
-static void SweepCompletionLeds( void )
+static uint8_t SelectWordCount( void )
 {
-    uint8_t sweep;
-    Led_TypeDef led;
+    TS_StateTypeDef ts_state;
+    uint8_t word_count = 0U;
 
-    for( sweep = 0; sweep < COMPLETION_LED_SWEEP_COUNT; ++sweep )
+    ui_draw_word_count_selection( );
+    while( word_count == 0U )
     {
-        for( led = LED1; led <= LED4; ++led )
-        {
-            BSP_LED_On( led );
-            HAL_Delay( COMPLETION_LED_STEP_MS );
-            BSP_LED_Off( led );
-        }
+        BSP_TS_GetState( &ts_state );
+        if( ts_state.touchDetected )
+            word_count = ui_word_count_at( ts_state.touchX[ 0 ], ts_state.touchY[ 0 ] );
+        HAL_Delay( TOUCH_POLL_MS );
     }
+    WaitForTouchRelease( );
+    return word_count;
 }
 
 static void FatalError( void )

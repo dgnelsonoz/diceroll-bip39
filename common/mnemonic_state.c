@@ -21,16 +21,26 @@ static void clear_entropy_bit( MnemonicState *state, uint16_t bit_position )
 
 void mnemonic_state_init( MnemonicState *state )
 {
+    ( void )mnemonic_state_init_words( state, MNEMONIC_WORD_COUNT );
+}
+
+int mnemonic_state_init_words( MnemonicState *state, uint8_t word_count )
+{
     volatile uint8_t *entropy;
     size_t ii;
 
     if( state == NULL )
-        return;
+        return -1;
+    if( word_count != 12U && word_count != 24U )
+        return -2;
 
     entropy = state->entropy;
     for( ii = 0; ii < MNEMONIC_ENTROPY_BYTES; ++ii )
         entropy[ ii ] = 0;
     state->bit_count = 0;
+    state->word_count = word_count;
+    state->entropy_bits = word_count == 12U ? 128U : 256U;
+    return 0;
 }
 
 int mnemonic_state_add_flip( MnemonicState *state, uint8_t bit )
@@ -42,7 +52,7 @@ int mnemonic_state_add_flip( MnemonicState *state, uint8_t bit )
         return -1;
     if( bit > 1U )
         return -2;
-    if( state->bit_count >= MNEMONIC_ENTROPY_BITS )
+    if( state->bit_count >= state->entropy_bits )
         return -3;
 
     byte_position = state->bit_count / 8U;
@@ -84,8 +94,8 @@ uint8_t mnemonic_state_get_completed_word_count( const MnemonicState *state )
         return 0U;
 
     completed = state->bit_count / MNEMONIC_WORD_BITS;
-    if( completed > MNEMONIC_DIRECT_WORDS )
-        completed = MNEMONIC_DIRECT_WORDS;
+    if( completed >= state->word_count )
+        completed = state->word_count - 1U;
     return ( uint8_t )completed;
 }
 
@@ -93,8 +103,8 @@ uint8_t mnemonic_state_get_current_word_number( const MnemonicState *state )
 {
     uint8_t completed = mnemonic_state_get_completed_word_count( state );
 
-    if( completed >= MNEMONIC_DIRECT_WORDS )
-        return MNEMONIC_WORD_COUNT;
+    if( completed >= state->word_count - 1U )
+        return state->word_count;
     return ( uint8_t )( completed + 1U );
 }
 
@@ -102,9 +112,8 @@ uint8_t mnemonic_state_get_current_word_bit_count( const MnemonicState *state )
 {
     if( state == NULL )
         return 0U;
-    if( state->bit_count >= MNEMONIC_DIRECT_WORDS * MNEMONIC_WORD_BITS )
-        return ( uint8_t )( state->bit_count -
-                            ( MNEMONIC_DIRECT_WORDS * MNEMONIC_WORD_BITS ) );
+    if( state->bit_count >= ( state->word_count - 1U ) * MNEMONIC_WORD_BITS )
+        return ( uint8_t )( state->bit_count - ( state->word_count - 1U ) * MNEMONIC_WORD_BITS );
     return ( uint8_t )( state->bit_count % MNEMONIC_WORD_BITS );
 }
 
@@ -116,7 +125,7 @@ int mnemonic_state_get_word_index( const MnemonicState *state, uint8_t word_numb
 
     if( state == NULL || index == NULL )
         return -1;
-    if( word_number == 0U || word_number > MNEMONIC_DIRECT_WORDS )
+    if( word_number == 0U || word_number >= state->word_count )
         return -2;
 
     start_bit = ( uint16_t )( word_number - 1U ) * MNEMONIC_WORD_BITS;
@@ -142,9 +151,11 @@ int mnemonic_state_get_final_word_index( const MnemonicState *state, uint16_t *i
     if( !mnemonic_state_entropy_complete( state ) )
         return -2;
 
-    sha256( state->entropy, MNEMONIC_ENTROPY_BYTES, digest );
-    *index = ( uint16_t )( ( ( uint16_t )( state->entropy[ 31 ] & 0x07U ) << 8 ) |
-                           digest[ 0 ] );
+    sha256( state->entropy, state->entropy_bits / 8U, digest );
+    if( state->word_count == 12U )
+        *index = ( uint16_t )( ( ( uint16_t )( state->entropy[ 15 ] & 0x7fU ) << 4 ) | ( digest[ 0 ] >> 4 ) );
+    else
+        *index = ( uint16_t )( ( ( uint16_t )( state->entropy[ 31 ] & 0x07U ) << 8 ) | digest[ 0 ] );
 
     wipe = digest;
     for( ii = 0; ii < SHA256_DIGEST_SIZE; ++ii )
@@ -155,5 +166,15 @@ int mnemonic_state_get_final_word_index( const MnemonicState *state, uint16_t *i
 
 int mnemonic_state_entropy_complete( const MnemonicState *state )
 {
-    return state != NULL && state->bit_count == MNEMONIC_ENTROPY_BITS;
+    return state != NULL && state->bit_count == state->entropy_bits;
+}
+
+uint8_t mnemonic_state_get_word_count( const MnemonicState *state )
+{
+    return state == NULL ? 0U : state->word_count;
+}
+
+uint8_t mnemonic_state_get_final_entropy_bit_count( const MnemonicState *state )
+{
+    return state != NULL && state->word_count == 12U ? 7U : 3U;
 }

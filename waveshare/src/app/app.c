@@ -30,6 +30,42 @@ static const uint16_t DARK_GREY = 0x4208U;
 static uint16_t *framebuffer;
 static uint8_t selected_word;
 
+static uint8_t word_grid_columns( const MnemonicState *state )
+{
+    return mnemonic_state_get_word_count( state ) == 12U ? 3U : 4U;
+}
+
+static uint8_t word_grid_rows( const MnemonicState *state )
+{
+    return mnemonic_state_get_word_count( state ) == 12U ? 4U : 6U;
+}
+
+static uint16_t word_cell_width( const MnemonicState *state )
+{
+    return DICEROLL_DISPLAY_WIDTH / word_grid_columns( state );
+}
+
+static uint16_t word_cell_height( const MnemonicState *state )
+{
+    return DICEROLL_WORD_GRID_HEIGHT / word_grid_rows( state );
+}
+
+static const char *word_number_separator( const MnemonicState *state, uint8_t word )
+{
+    if( mnemonic_state_get_word_count( state ) == 12U )
+        return word == 9U ? "  " : " ";
+    return word > 6U && word < 10U ? "  " : " ";
+}
+
+static void word_cell_position( const MnemonicState *state, uint8_t word, uint16_t *x, uint16_t *y )
+{
+    uint8_t rows = word_grid_rows( state );
+    uint8_t zero_based = word - 1U;
+
+    *x = ( uint16_t )( zero_based / rows ) * word_cell_width( state );
+    *y = ( uint16_t )( DICEROLL_WORD_GRID_TOP + ( zero_based % rows ) * word_cell_height( state ) );
+}
+
 typedef char wave_layout_width_must_match[
     LCD_WIDTH == DICEROLL_DISPLAY_WIDTH ? 1 : -1 ];
 typedef char wave_layout_height_must_match[
@@ -54,20 +90,23 @@ static void draw_word_cell( DicerollCanvas *canvas, const MnemonicState *state, 
     uint16_t index;
     uint16_t x;
     uint16_t y;
+    uint16_t cell_width = word_cell_width( state );
+    uint16_t cell_height = word_cell_height( state );
+    bool large_text = mnemonic_state_get_word_count( state ) == 12U;
     uint8_t current_word = mnemonic_state_get_current_word_number( state );
-    int has_word = word < 24U
+    int has_word = word < mnemonic_state_get_word_count( state )
                    ? mnemonic_state_get_word_index( state, word, &index ) == 0
                    : mnemonic_state_get_final_word_index( state, &index ) == 0;
 
-    diceroll_layout_word_cell( word, &x, &y );
-    graphics_fill_rect( canvas, ( uint16_t )( x + 1U ), y,
-                        DICEROLL_WORD_COLUMN_WIDTH - 1U,
-                        DICEROLL_WORD_ROW_HEIGHT - 1U, BLACK );
+    word_cell_position( state, word, &x, &y );
+    if( x / cell_width == word_grid_columns( state ) - 1U )
+        cell_width = DICEROLL_DISPLAY_WIDTH - x;
+    graphics_fill_rect( canvas, ( uint16_t )( x + 1U ), y, cell_width - 1U, cell_height - 1U, BLACK );
     if( has_word )
     {
         const char *word_text = bip39_get_word_by_index( index );
         uint8_t characters = utf8_character_count( word_text );
-        const char *separator = word <= 6U ? " " : word < 10U ? "  " : " ";
+        const char *separator = word_number_separator( state, word );
         int offset = snprintf( label, sizeof( label ), "%u%s%s", word,
                                separator, word_text );
         while( characters++ < 8U && offset < ( int )sizeof( label ) - 1 )
@@ -79,32 +118,29 @@ static void draw_word_cell( DicerollCanvas *canvas, const MnemonicState *state, 
              !mnemonic_state_entropy_complete( state ) )
     {
         snprintf( label, sizeof( label ), "%u%s[%s]", word,
-                  word <= 6U ? " " : word < 10U ? "  " : " ",
+                  word_number_separator( state, word ),
                   mnemonic_state_get_current_word_bit_count( state ) == 0U
                   ? "ready" : "in progress" );
     }
-    else if( word == 24U )
+    else if( word == mnemonic_state_get_word_count( state ) )
         snprintf( label, sizeof( label ), "%u%s[checksum]", word,
-                  word <= 6U ? " " : word < 10U ? "  " : " " );
+                  word_number_separator( state, word ) );
     else
         snprintf( label, sizeof( label ), "%u", word );
-    graphics_text( canvas, ( uint16_t )( x + 10U ),
-                   ( uint16_t )( y + 10U ), label, 1,
-                   word == current_word &&
-                   !mnemonic_state_entropy_complete( state )
-                   ? CYAN : WHITE, BLACK );
+    uint16_t color = word == current_word && !mnemonic_state_entropy_complete( state ) ? CYAN : WHITE;
+    if( large_text )
+        graphics_text20( canvas, ( uint16_t )( x + 8U ), ( uint16_t )( y + 16U ), label, color, BLACK );
+    else
+        graphics_text( canvas, ( uint16_t )( x + 10U ), ( uint16_t )( y + 10U ), label, 1, color, BLACK );
     if( has_word )
-        graphics_text( canvas,
-                       ( uint16_t )( x + 190U - strlen( list_number ) * 11U ),
-                       ( uint16_t )( y + 10U ), list_number, 1,
-                       word == current_word &&
-                       !mnemonic_state_entropy_complete( state )
-                       ? CYAN : WHITE, BLACK );
-    if( word == selected_word )
     {
-        graphics_draw_rect( canvas, ( uint16_t )( x + 2U ), ( uint16_t )( y + 2U ), 196, 32,
-                            0xffe0U );
+        if( large_text )
+            graphics_text20( canvas, ( uint16_t )( x + cell_width - 8U - strlen( list_number ) * 14U ), ( uint16_t )( y + 16U ), list_number, color, BLACK );
+        else
+            graphics_text( canvas, ( uint16_t )( x + cell_width - 10U - strlen( list_number ) * 11U ), ( uint16_t )( y + 10U ), list_number, 1, color, BLACK );
     }
+    if( word == selected_word )
+        graphics_draw_rect( canvas, ( uint16_t )( x + 2U ), ( uint16_t )( y + 2U ), cell_width - 4U, cell_height - 4U, 0xffe0U );
 }
 
 static void draw_status( DicerollCanvas *canvas, const MnemonicState *state )
@@ -113,16 +149,17 @@ static void draw_status( DicerollCanvas *canvas, const MnemonicState *state )
     char number[ 3 ];
     uint8_t current_word = mnemonic_state_get_current_word_number( state );
     uint8_t entered = mnemonic_state_get_current_word_bit_count( state );
-    uint8_t required = current_word == 24U ? 3U : 11U;
+    uint8_t required = current_word == mnemonic_state_get_word_count( state ) ? mnemonic_state_get_final_entropy_bit_count( state ) : 11U;
     uint8_t completed = mnemonic_state_get_completed_word_count( state );
+    uint8_t word_count = mnemonic_state_get_word_count( state );
     bool word_boundary = state->bit_count > 0U &&
-                         state->bit_count < MNEMONIC_ENTROPY_BITS &&
+                         !mnemonic_state_entropy_complete( state ) &&
                          state->bit_count % MNEMONIC_WORD_BITS == 0U;
 
     if( word_boundary )
     {
         --current_word;
-        required = current_word == 24U ? 3U : 11U;
+        required = current_word == mnemonic_state_get_word_count( state ) ? mnemonic_state_get_final_entropy_bit_count( state ) : 11U;
         entered = required;
     }
 
@@ -130,7 +167,7 @@ static void draw_status( DicerollCanvas *canvas, const MnemonicState *state )
     if( mnemonic_state_entropy_complete( state ) )
     {
         graphics_text_centered( canvas, 260,
-                                "PHRASE COMPLETE - 24 WORDS", 1, GREEN, BLACK );
+                                word_count == 12U ? "PHRASE COMPLETE - 12 WORDS" : "PHRASE COMPLETE - 24 WORDS", 1, GREEN, BLACK );
     }
     else
     {
@@ -150,7 +187,7 @@ static void draw_status( DicerollCanvas *canvas, const MnemonicState *state )
                          ( uint16_t )( 100U - strlen( number ) * 14U ),
                          258, number, WHITE, BLACK );
         graphics_text20( canvas, 100, 258, "/", WHITE, BLACK );
-        graphics_text20( canvas, 114, 258, "24", WHITE, BLACK );
+        graphics_text20( canvas, 114, 258, word_count == 12U ? "12" : "24", WHITE, BLACK );
         graphics_text20( canvas, 200, 258, "ROLL/FLIP", WHITE, BLACK );
         snprintf( number, sizeof( number ), "%u", entered );
         graphics_text20( canvas,
@@ -164,21 +201,21 @@ static void draw_status( DicerollCanvas *canvas, const MnemonicState *state )
     }
 
     if( mnemonic_state_entropy_complete( state ) )
-        completed = MNEMONIC_WORD_COUNT;
+        completed = word_count;
     if( completed > 0U )
     {
         char verification[ 72 ];
         char verification_bits[ MNEMONIC_WORD_BITS + 2U ];
         uint8_t detail_word = selected_word != 0U ? selected_word : completed;
         uint16_t detail_index;
-        int result = detail_word == MNEMONIC_WORD_COUNT
+        int result = detail_word == word_count
                      ? mnemonic_state_get_final_word_index( state, &detail_index )
                      : mnemonic_state_get_word_index( state, detail_word,
                          &detail_index );
         if( result == 0 )
         {
             diceroll_format_index_bits( detail_index, verification_bits,
-                                        detail_word == MNEMONIC_WORD_COUNT );
+                                        detail_word == word_count );
             snprintf( verification, sizeof( verification ),
                       "WORD %u: %s = INDEX %u = LIST %u = %s",
                       detail_word, verification_bits, detail_index,
@@ -198,11 +235,11 @@ static void update_state_regions( const MnemonicState *state, uint8_t previous_w
     char number[ 3 ];
     char bit[ 2 ] = { '-', '\0' };
 
-    /* The 256th flip completes the entropy. Word 24 then becomes the three
-       user-entered bits plus the eight-bit SHA-256 checksum. */
+    /* The final entropy bit completes the final word by adding its SHA-256
+       checksum bits. */
     if( mnemonic_state_entropy_complete( state ) )
     {
-        draw_word_cell( &canvas, state, 24U );
+        draw_word_cell( &canvas, state, mnemonic_state_get_word_count( state ) );
         draw_status( &canvas, state );
         return;
 
@@ -214,7 +251,7 @@ static void update_state_regions( const MnemonicState *state, uint8_t previous_w
         draw_word_cell( &canvas, state, current_word );
         draw_status( &canvas, state );
 
-        if( current_word > previous_word && previous_word <= MNEMONIC_DIRECT_WORDS )
+        if( current_word > previous_word && previous_word < mnemonic_state_get_word_count( state ) )
         {
             char previous_bits[ MNEMONIC_WORD_BITS + 1U ];
             uint16_t previous_index;
@@ -271,7 +308,7 @@ static void update_state_regions( const MnemonicState *state, uint8_t previous_w
         if( previous_entered == 0U )
         {
             char partial_bits[ MNEMONIC_WORD_BITS + 1U ];
-            uint8_t required = current_word == MNEMONIC_WORD_COUNT ? 3U : 11U;
+            uint8_t required = current_word == mnemonic_state_get_word_count( state ) ? mnemonic_state_get_final_entropy_bit_count( state ) : 11U;
 
             graphics_fill_rect( &canvas, 540, 258, 200, 24, BLACK );
             diceroll_format_partial_bits( state, partial_bits, required );
@@ -314,19 +351,23 @@ static void draw_diceroll_screen( uint16_t *pixels, const MnemonicState *state )
     graphics_fill_rect( &canvas, 0, DICEROLL_TITLE_HEIGHT - 1U,
                         DICEROLL_DISPLAY_WIDTH, 1, WHITE );
 
-    for( uint16_t column = 1; column < 4; ++column )
+    uint8_t columns = word_grid_columns( state );
+    uint8_t rows = word_grid_rows( state );
+    uint16_t cell_width = word_cell_width( state );
+    uint16_t cell_height = word_cell_height( state );
+    for( uint16_t column = 1; column < columns; ++column )
         graphics_fill_rect( &canvas,
-                            column * DICEROLL_WORD_COLUMN_WIDTH,
+                            column * cell_width,
                             DICEROLL_WORD_GRID_TOP, 1,
                             DICEROLL_WORD_GRID_HEIGHT, WHITE );
-    for( uint16_t row = 1; row <= 6; ++row )
+    for( uint16_t row = 1; row <= rows; ++row )
     {
         graphics_fill_rect( &canvas, 0,
                             ( uint16_t )( DICEROLL_WORD_GRID_TOP +
-                                          row * DICEROLL_WORD_ROW_HEIGHT - 1U ),
+                                          row * cell_height - 1U ),
                             DICEROLL_DISPLAY_WIDTH, 1, WHITE );
     }
-    for( uint8_t word = 1; word <= 24; ++word )
+    for( uint8_t word = 1; word <= mnemonic_state_get_word_count( state ); ++word )
         draw_word_cell( &canvas, state, word );
 
     draw_status( &canvas, state );
@@ -389,6 +430,36 @@ static void present( const MnemonicState *state )
     draw_diceroll_screen( framebuffer, state );
 }
 
+static uint8_t choose_word_count( void )
+{
+    DicerollCanvas canvas = { framebuffer, LCD_WIDTH, LCD_HEIGHT };
+    uint16_t x;
+    uint16_t y;
+
+    graphics_clear( &canvas, BLACK );
+    graphics_text24_centered( &canvas, 3, "DICE ROLL OR COIN FLIP TO BIP-39", WHITE, BLACK );
+    graphics_fill_rect( &canvas, 80, 130, 300, 220, LIGHT_GREY );
+    graphics_fill_rect( &canvas, 420, 130, 300, 220, DARK_GREY );
+    graphics_text24( &canvas, 148, 225, "12 WORDS", BLACK, LIGHT_GREY );
+    graphics_text24( &canvas, 488, 225, "24 WORDS", WHITE, DARK_GREY );
+
+    while( true )
+    {
+        if( waveshare_platform_touch_read( &x, &y ) && y >= 130U && y < 350U )
+        {
+            uint8_t words = x >= 80U && x < 380U ? 12U : x >= 420U && x < 720U ? 24U : 0U;
+
+            if( words != 0U )
+            {
+                while( waveshare_platform_touch_read( &x, &y ) )
+                    waveshare_platform_sleep_ms( 5U );
+                return words;
+            }
+        }
+        waveshare_platform_sleep_ms( 5U );
+    }
+}
+
 void app_run( void )
 {
     MnemonicState state;
@@ -401,10 +472,10 @@ void app_run( void )
     uint16_t touch_y = 0U;
     uint64_t press_started = 0U;
 
-    mnemonic_state_init( &state );
     framebuffer = waveshare_platform_display_init( );
-    present( &state );
     waveshare_platform_touch_init( );
+    mnemonic_state_init_words( &state, choose_word_count( ) );
+    present( &state );
 
     while( true )
     {
@@ -424,9 +495,7 @@ void app_run( void )
             if( touch_y >= DICEROLL_BUTTON_TOP )
             {
                 held_button = diceroll_layout_button_at( touch_x, touch_y );
-                if( ( held_button == DICEROLL_BUTTON_RESTART &&
-                        mnemonic_state_get_bit_count( &state ) == 0U ) ||
-                        ( held_button == DICEROLL_BUTTON_BACK &&
+                if( ( held_button == DICEROLL_BUTTON_BACK &&
                           ( mnemonic_state_get_bit_count( &state ) == 0U ||
                             mnemonic_state_entropy_complete( &state ) ) ) ||
                         ( held_button >= DICEROLL_BUTTON_ZERO &&
@@ -439,14 +508,12 @@ void app_run( void )
             else if( touch_y >= DICEROLL_WORD_GRID_TOP &&
                      touch_y < DICEROLL_STATUS_TOP )
             {
-                uint8_t column = ( uint8_t )( touch_x /
-                                              DICEROLL_WORD_COLUMN_WIDTH );
-                uint8_t row = ( uint8_t )( ( touch_y -
-                                             DICEROLL_WORD_GRID_TOP ) /
-                                           DICEROLL_WORD_ROW_HEIGHT );
-                uint8_t word = ( uint8_t )( column * 6U + row + 1U );
+                uint8_t rows = word_grid_rows( &state );
+                uint8_t column = ( uint8_t )( ( uint32_t )touch_x * word_grid_columns( &state ) / DICEROLL_DISPLAY_WIDTH );
+                uint8_t row = ( uint8_t )( ( touch_y - DICEROLL_WORD_GRID_TOP ) / word_cell_height( &state ) );
+                uint8_t word = ( uint8_t )( column * rows + row + 1U );
                 uint8_t completed = mnemonic_state_entropy_complete( &state )
-                                    ? MNEMONIC_WORD_COUNT
+                                    ? mnemonic_state_get_word_count( &state )
                                     : mnemonic_state_get_completed_word_count( &state );
                 if( word <= completed )
                 {
@@ -509,9 +576,10 @@ void app_run( void )
             if( held_button == DICEROLL_BUTTON_RESTART &&
                     held_us >= 1000000 )
             {
-                mnemonic_state_init( &state );
+                mnemonic_state_init_words( &state, mnemonic_state_get_word_count( &state ) );
                 selected_word = 0U;
                 action_done = true;
+                mnemonic_state_init_words( &state, choose_word_count( ) );
                 present( &state );
             }
             else if( held_button == DICEROLL_BUTTON_BACK &&

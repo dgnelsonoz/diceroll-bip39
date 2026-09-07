@@ -16,9 +16,12 @@ typedef struct
 {
     uint8_t entropy[ MNEMONIC_ENTROPY_BYTES ];
     uint16_t bit_count;
+    uint16_t entropy_bits;
+    uint8_t word_count;
 } MnemonicState;
 
 void mnemonic_state_init( MnemonicState *state );
+int mnemonic_state_init_words( MnemonicState *state, uint8_t word_count );
 int mnemonic_state_add_flip( MnemonicState *state, uint8_t bit );
 int mnemonic_state_backspace( MnemonicState *state );
 uint16_t mnemonic_state_get_bit_count( const MnemonicState *state );
@@ -28,5 +31,7 @@ uint8_t mnemonic_state_get_current_word_bit_count( const MnemonicState *state );
 int mnemonic_state_get_word_index( const MnemonicState *state, uint8_t word_number, uint16_t *index );
 int mnemonic_state_get_final_word_index( const MnemonicState *state, uint16_t *index );
 int mnemonic_state_entropy_complete( const MnemonicState *state );
+uint8_t mnemonic_state_get_word_count( const MnemonicState *state );
+uint8_t mnemonic_state_get_final_entropy_bit_count( const MnemonicState *state );
 
 #endif
