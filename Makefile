@@ -32,14 +32,12 @@ release:
 		$(MAKE) wave; \
 	fi; \
 	release_dir="$(RELEASE_ROOT)/$$version"; \
-	project_dir="$$(basename "$$PWD")"; \
-	project_parent="$$(dirname "$$PWD")"; \
 	rm -rf "$$release_dir"; \
 	mkdir -p "$$release_dir"; \
 	if [ "$$platform" = all ] || [ "$$platform" = stm32 ]; then \
 		for language in english czech french italian portuguese spanish; do \
 			cp "stm32/build/$$language/bip39-stm32-$$language.bin" \
-				"$$release_dir/bip39-stm32-$$language-$$version.bin"; \
+				"$$release_dir/stm32-$$language-$$version.bin"; \
 		done; \
 	fi; \
 	if [ "$$platform" = all ] || [ "$$platform" = waveshare ]; then \
@@ -50,18 +48,9 @@ release:
 				target=bip39_waveshare_$$language; \
 			fi; \
 			cp "waveshare/build/$$target.uf2" \
-				"$$release_dir/bip39-waveshare-$$language-$$version.uf2"; \
+				"$$release_dir/waveshare-$$language-$$version.uf2"; \
 		done; \
 	fi; \
-	archive="$$PWD/$$release_dir/bip39-$$version-source.tar.gz"; \
-	tar -czf "$$archive" \
-		--exclude="$$project_dir/.git" \
-		--exclude="$$project_dir/releases" \
-		--exclude="$$project_dir/release*" \
-		--exclude="$$project_dir/*/build" \
-		--exclude="$$project_dir/*/release*" \
-		--exclude="$$project_dir/.DS_Store" \
-		-C "$$project_parent" "$$project_dir"; \
 	if command -v shasum >/dev/null 2>&1; then \
 		(cd "$$release_dir" && shasum -a 256 * > SHA256SUMS); \
 	else \

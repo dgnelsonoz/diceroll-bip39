@@ -9,6 +9,8 @@
 void ui_draw( const MnemonicState *state );
 void ui_update( const MnemonicState *state );
 void ui_draw_error( const char *message );
+void ui_draw_word_count_selection( void );
+uint8_t ui_word_count_at( uint16_t x, uint16_t y );
 DicerollButton ui_hit_test( uint16_t x, uint16_t y );
 int ui_select_word_at( const MnemonicState *state, uint16_t x, uint16_t y );
 void ui_show_hold_progress( DicerollButton button, uint32_t elapsed_ms, uint32_t required_ms );

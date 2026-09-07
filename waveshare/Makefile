@@ -47,8 +47,8 @@ release: all
 			target=bip39_waveshare_$$language; \
 		fi; \
 		cp $(BUILD_DIR)/$$target.uf2 \
-			$(RELEASE_DIR)/bip39-waveshare-$$language-$(VERSION).uf2; \
-		echo "Release file: $(RELEASE_DIR)/bip39-waveshare-$$language-$(VERSION).uf2"; \
+			$(RELEASE_DIR)/waveshare-$$language-$(VERSION).uf2; \
+		echo "Release file: $(RELEASE_DIR)/waveshare-$$language-$(VERSION).uf2"; \
 	done
 
 flash: configure
