@@ -346,8 +346,8 @@ static void draw_diceroll_screen( uint16_t *pixels, const MnemonicState *state )
     DicerollCanvas canvas = { pixels, LCD_WIDTH, LCD_HEIGHT };
 
     graphics_clear( &canvas, BLACK );
-    graphics_text24_centered( &canvas, 3, "DICE ROLL OR COIN FLIP TO BIP-39",
-                              WHITE, BLACK );
+    graphics_text20( &canvas, 10, 5, "Entropy39", CYAN, BLACK );
+    graphics_text24( &canvas, 203, 3, "DICE ROLL OR COIN FLIP TO BIP-39", WHITE, BLACK );
     graphics_fill_rect( &canvas, 0, DICEROLL_TITLE_HEIGHT - 1U,
                         DICEROLL_DISPLAY_WIDTH, 1, WHITE );
 
@@ -437,7 +437,8 @@ static uint8_t choose_word_count( void )
     uint16_t y;
 
     graphics_clear( &canvas, BLACK );
-    graphics_text24_centered( &canvas, 3, "DICE ROLL OR COIN FLIP TO BIP-39", WHITE, BLACK );
+    graphics_text20( &canvas, 10, 5, "Entropy39", CYAN, BLACK );
+    graphics_text24( &canvas, 203, 3, "DICE ROLL OR COIN FLIP TO BIP-39", WHITE, BLACK );
     graphics_fill_rect( &canvas, 80, 130, 300, 220, LIGHT_GREY );
     graphics_fill_rect( &canvas, 420, 130, 300, 220, DARK_GREY );
     graphics_text24( &canvas, 148, 225, "12 WORDS", BLACK, LIGHT_GREY );
