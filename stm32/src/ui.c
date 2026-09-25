@@ -126,10 +126,14 @@ static void draw_title( void )
 {
     BSP_LCD_SetTextColor( LCD_COLOR_BLACK );
     BSP_LCD_FillRect( 0, 0, DICEROLL_DISPLAY_WIDTH, DICEROLL_TITLE_HEIGHT );
+    BSP_LCD_SetFont( &Font20 );
+    BSP_LCD_SetTextColor( LCD_COLOR_CYAN );
+    BSP_LCD_SetBackColor( LCD_COLOR_BLACK );
+    display_text( 10, 5, "Entropy39" );
     BSP_LCD_SetFont( &Font24 );
     BSP_LCD_SetTextColor( LCD_COLOR_WHITE );
     BSP_LCD_SetBackColor( LCD_COLOR_BLACK );
-    display_text_centered( 3, "DICE ROLL OR COIN FLIP TO BIP-39" );
+    display_text( 203, 3, "DICE ROLL OR COIN FLIP TO BIP-39" );
     BSP_LCD_DrawHLine( 0, DICEROLL_TITLE_HEIGHT - 1U, DICEROLL_DISPLAY_WIDTH );
 }
 
