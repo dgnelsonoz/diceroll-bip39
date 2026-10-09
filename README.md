@@ -1,5 +1,9 @@
 ## Dice Roll BIP-39
 
+- The software is provided without any guarantee of correctness or security.
+- Users should independently verify generated seed phrases.
+- Users should not rely on it to secure significant funds without appropriate testing.
+---
 Dice Roll BIP-39 is an offline, transparent, verifiable, inexpensive and easy to use tool for generating a BIP-39 seed phrase from coin flips or dice rolls.  It runs on either the Waveshare RP2350 4.3-inch Capacitive Touch Display Development Board (RP2350-Touch-LCD-4.3B-BOX) or on the STM32F469I Discovery Development Board (STM32F469I-DISCO).  Both boards use an integrated 4.3 inch touchscreen.  The Waveshare board can be purchased with an optional hard case.  The Waveshare board also has an internal charging circuit that supports a lithium ion battery.  At the time of writing the STM32 board has proven difficult to source and is more expensive.  It has no internal battery charging circuitry.
 
 Dice Roll BIP-39 supports the official BIP-39 wordlists in English, French, Spanish, Italian, Czech and Portuguese.  It can be used to produce either a 12 word or 24 word BIP-39 seed phrase.
